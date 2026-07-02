@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Conexión Vital · Postobón</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<style>
+:root{
+  --azul-1:#1B87D4; --azul-2:#0E5FA8; --azul-claro:#9BD4F5; --azul-hielo:#EAF6FE;
+  --verde:#6FBF73; --verde-suave:#DFF3E0;
+  --lila:#9B7FD4;  --lila-suave:#EFE9FA;
+  --cielo:#57AEE4; --cielo-suave:#E3F2FC;
+  --sol:#F5A623;   --sol-suave:#FDF1DC;
+  --tinta:#123A5C; --blanco:#FFFFFF;
+  --rojo:#E45B5B;
+  --radio:22px;
+  --sombra:0 8px 24px rgba(14,95,168,.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{height:100%}
+body{
+  font-family:'Nunito',system-ui,sans-serif;color:var(--tinta);
+  background:linear-gradient(165deg,var(--azul-1) 0%,var(--azul-2) 100%);
+  background-attachment:fixed;
+  min-height:100dvh;display:flex;justify-content:center;
+  overflow-x:hidden;overflow-y:auto;
+}
+#app{width:100%;max-width:460px;min-height:100dvh;display:flex;flex-direction:column;position:relative}
+
+.ondas{position:fixed;inset:0;pointer-events:none;opacity:.3;z-index:0}
+.ondas svg{position:absolute;width:200%;left:-50%}
+
+.vista{display:none;flex:1;flex-direction:column;padding:26px 20px calc(34px + env(safe-area-inset-bottom));position:relative;z-index:1;animation:entrar .35s ease}
+.vista.activa{display:flex}
+@keyframes entrar{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ===== marca ===== */
+.marca{text-align:center;margin-bottom:6px}
+.marca .logo-vital{font-family:'Baloo 2';line-height:.95;color:#fff}
+.marca .logo-vital .c1{display:block;font-size:22px;font-weight:700;letter-spacing:4px}
+.marca .logo-vital .c2{display:block;font-size:46px;font-weight:800;color:var(--azul-claro);letter-spacing:2px}
+.marca .logo-vital .c3{display:block;font-size:15px;font-style:italic;font-weight:600;color:#fff;opacity:.9}
+.logo-parque{display:inline-block;margin-top:10px;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.45);color:#fff;font-weight:800;font-size:13px;letter-spacing:1px;padding:6px 16px;border-radius:999px}
+
+/* ===== tarjetas y controles ===== */
+.tarjeta{background:var(--blanco);border-radius:var(--radio);box-shadow:var(--sombra);padding:24px 20px}
+h1{font-family:'Baloo 2';font-size:26px;line-height:1.15;color:var(--tinta)}
+h2{font-family:'Baloo 2';font-size:21px;color:var(--tinta)}
+.sub{font-size:15px;color:#4A6B8A;margin-top:6px;line-height:1.45}
+.campo{margin-top:14px}
+.campo label{display:block;font-size:12.5px;font-weight:800;letter-spacing:.4px;color:#4A6B8A;margin-bottom:5px;text-transform:uppercase}
+.campo input,.campo select{
+  width:100%;padding:13px 14px;border:2px solid #D7E9F7;border-radius:14px;
+  font-family:'Nunito';font-size:16px;font-weight:600;color:var(--tinta);background:#FBFDFF;outline:none;
+}
+.campo input:focus,.campo select:focus{border-color:var(--azul-1)}
+.campo.error input,.campo.error select{border-color:var(--rojo)}
+.checks{margin-top:16px;display:flex;flex-direction:column;gap:10px}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.4;color:#3D5F80}
+.check input{width:20px;height:20px;margin-top:1px;accent-color:var(--azul-1);flex-shrink:0}
+.check a{color:var(--azul-1);font-weight:700}
+.aviso-error{display:none;margin-top:12px;background:#FDECEC;color:#B03A3A;font-size:13.5px;font-weight:700;padding:10px 14px;border-radius:12px}
+.aviso-error.visible{display:block}
+
+.btn{
+  display:block;width:100%;padding:16px;border:none;border-radius:999px;cursor:pointer;
+  font-family:'Baloo 2';font-size:18px;font-weight:700;letter-spacing:.5px;text-align:center;
+  background:var(--blanco);color:var(--azul-2);box-shadow:0 6px 18px rgba(0,0,0,.2);
+  transition:transform .12s ease;
+}
+.btn:active{transform:scale(.97)}
+.btn.primario{background:linear-gradient(135deg,var(--azul-1),var(--azul-2));color:#fff}
+.btn.fantasma{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.6);box-shadow:none}
+.btn:disabled{opacity:.45;pointer-events:none}
+.btn.mini{padding:12px;font-size:15.5px}
+.enlace{background:none;border:none;color:#fff;font-family:'Nunito';font-weight:700;font-size:14.5px;text-decoration:underline;margin-top:16px;cursor:pointer;align-self:center}
+
+/* ===== familia ===== */
+.familia{display:flex;justify-content:center;gap:8px;margin:18px 0 8px}
+.pers{width:44px;height:64px}
+.pers .cab{width:22px;height:22px;border-radius:50%;background:#fff;margin:0 auto}
+.pers .cue{width:34px;height:36px;border-radius:12px;background:#fff;margin:4px auto 0}
+.pers.p2 .cab,.pers.p2 .cue,.pers.p4 .cab,.pers.p4 .cue{background:var(--azul-claro)}
+.pers.p3{transform:scale(.85)}.pers.p4{transform:scale(.8)}
+
+/* ===== instrucciones ===== */
+.paso-instr{display:flex;gap:14px;align-items:flex-start;margin-top:16px}
+.paso-instr .icono{width:44px;height:44px;flex-shrink:0;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.paso-instr:nth-of-type(1) .icono{background:var(--verde-suave)}
+.paso-instr:nth-of-type(2) .icono{background:var(--sol-suave)}
+.paso-instr:nth-of-type(3) .icono{background:var(--lila-suave)}
+.paso-instr:nth-of-type(4) .icono{background:var(--cielo-suave)}
+.paso-instr b{font-size:15.5px}
+.paso-instr p{font-size:13.5px;color:#4A6B8A;line-height:1.4}
+
+/* ===== pasaporte ===== */
+.saludo{color:#fff;text-align:center;margin-bottom:14px}
+.saludo b{font-family:'Baloo 2';font-size:20px}
+.pasaporte{background:#fff;border-radius:26px;box-shadow:var(--sombra);padding:26px 22px;text-align:center}
+.pasaporte h2{font-size:24px}
+.pasaporte .sub{margin-bottom:20px}
+.estaciones{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px}
+.estacion{border:none;background:none;cursor:pointer;font-family:'Nunito'}
+.est-circulo{
+  width:92px;height:92px;margin:0 auto;border-radius:50%;position:relative;
+  display:flex;align-items:center;justify-content:center;font-size:36px;
+  border:4px solid transparent;transition:transform .15s ease;
+}
+.estacion:active .est-circulo{transform:scale(.94)}
+.estacion[data-e="1"] .est-circulo{background:var(--verde-suave);border-color:var(--verde)}
+.estacion[data-e="2"] .est-circulo{background:var(--lila-suave);border-color:var(--lila)}
+.estacion[data-e="3"] .est-circulo{background:var(--cielo-suave);border-color:var(--cielo)}
+.estacion[data-e="4"] .est-circulo{background:var(--sol-suave);border-color:var(--sol)}
+.est-nombre{display:block;margin-top:8px;font-weight:800;font-size:14px;color:var(--tinta)}
+.est-estado{display:block;font-size:11.5px;font-weight:700;color:#7C99B4;letter-spacing:.5px;text-transform:uppercase}
+.sello{
+  position:absolute;inset:-4px;border-radius:50%;background:rgba(18,58,92,.82);
+  display:none;align-items:center;justify-content:center;color:#fff;font-size:38px;font-weight:800;
+}
+.estacion.completa .sello{display:flex;animation:estampar .45s cubic-bezier(.2,1.6,.4,1)}
+.estacion.completa .est-estado{color:var(--verde)}
+@keyframes estampar{0%{transform:scale(2.2);opacity:0}60%{transform:scale(.92)}100%{transform:scale(1);opacity:1}}
+.barra{height:14px;background:#E4F0FA;border-radius:999px;overflow:hidden;margin-bottom:8px}
+.barra > div{height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,var(--azul-claro),var(--azul-1));transition:width .6s ease}
+.barra-txt{font-size:13px;font-weight:800;color:#4A6B8A;margin-bottom:18px}
+
+/* ===== escáner QR ===== */
+.scan-marco{
+  position:relative;border-radius:24px;overflow:hidden;background:#0A2A44;
+  aspect-ratio:3/4;box-shadow:var(--sombra);
+}
+.scan-marco video{width:100%;height:100%;object-fit:cover}
+.scan-guia{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;
+}
+.scan-guia div{
+  width:62%;aspect-ratio:1;border:3px solid rgba(255,255,255,.9);border-radius:20px;
+  box-shadow:0 0 0 2000px rgba(10,42,68,.45);
+}
+.scan-estado{text-align:center;color:#fff;font-weight:700;font-size:14.5px;margin-top:14px;min-height:22px}
+
+/* ===== vista de reto genérica ===== */
+.cab-reto{display:flex;align-items:center;gap:12px;color:#fff;margin-bottom:12px}
+.cab-reto .volver{background:rgba(255,255,255,.2);border:none;color:#fff;width:40px;height:40px;border-radius:50%;font-size:20px;cursor:pointer;flex-shrink:0}
+.cab-reto h2{color:#fff;font-size:19px;line-height:1.1}
+.cab-reto span{font-size:12.5px;opacity:.85;font-weight:700}
+.pasos-dots{display:flex;gap:7px;justify-content:center;margin-bottom:14px}
+.pasos-dots .dot{width:34px;height:8px;border-radius:999px;background:rgba(255,255,255,.3)}
+.pasos-dots .dot.activo{background:#fff}
+.pasos-dots .dot.hecho{background:rgba(255,255,255,.75)}
+.paso-titulo{color:#fff;text-align:center;font-weight:800;font-size:13px;letter-spacing:1px;text-transform:uppercase;opacity:.9;margin-bottom:12px}
+.panel-reto{background:#fff;border-radius:26px;box-shadow:var(--sombra);padding:24px 20px;flex:1;display:flex;flex-direction:column}
+.tema-1 .panel-reto{border-top:8px solid var(--verde)}
+.tema-2 .panel-reto{border-top:8px solid var(--lila)}
+.tema-3 .panel-reto{border-top:8px solid var(--cielo)}
+.tema-4 .panel-reto{border-top:8px solid var(--sol)}
+.centro{text-align:center}
+
+/* dado */
+.dado{
+  width:104px;height:104px;margin:16px auto;border-radius:24px;
+  background:linear-gradient(145deg,#fff,#E8F4FD);border:3px solid var(--verde);
+  display:flex;align-items:center;justify-content:center;font-size:54px;font-family:'Baloo 2';font-weight:800;color:var(--verde);
+  box-shadow:0 10px 22px rgba(111,191,115,.35);
+}
+.dado.girando{animation:girar .12s linear infinite}
+@keyframes girar{from{transform:rotate(-8deg) scale(1.05)}to{transform:rotate(8deg) scale(1.05)}}
+.reto-fisico{font-family:'Baloo 2';font-size:21px;color:var(--tinta);margin:8px 0 4px;min-height:52px}
+.crono{font-family:'Baloo 2';font-size:50px;font-weight:800;color:var(--verde);font-variant-numeric:tabular-nums;margin:4px 0}
+.crono.lila{color:var(--lila)}
+.crono.alerta{color:var(--rojo)}
+
+/* respiración */
+.circulo-resp{
+  width:160px;height:160px;border-radius:50%;margin:22px auto;
+  background:radial-gradient(circle at 35% 30%,#D9C8F5,var(--lila));
+  display:flex;align-items:center;justify-content:center;color:#fff;
+  font-family:'Baloo 2';font-size:18px;font-weight:700;text-align:center;
+  box-shadow:0 0 0 16px rgba(155,127,212,.15),0 0 0 32px rgba(155,127,212,.07);
+  transition:transform 4s ease-in-out;cursor:pointer;
+}
+.circulo-resp.grande{transform:scale(1.32)}
+.circulo-resp.chico{transform:scale(.85)}
+.mini-eti{font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#7C99B4}
+
+/* concentración */
+.grid-conc{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
+.grid-conc button{
+  border:none;background:var(--lila-suave);border-radius:16px;aspect-ratio:1;font-size:34px;cursor:pointer;
+  transition:transform .1s ease;
+}
+.grid-conc button:active{transform:scale(.92)}
+.grid-conc button.mal{animation:tiembla .3s ease}
+@keyframes tiembla{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* intención */
+.chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:16px 0}
+.chip{
+  border:2.5px solid var(--lila);background:#fff;color:var(--lila);border-radius:999px;
+  padding:11px 18px;font-family:'Nunito';font-weight:800;font-size:14.5px;cursor:pointer;
+}
+.chip.sel{background:var(--lila);color:#fff}
+.video-ph{
+  margin-top:6px;background:var(--lila-suave);border:2px dashed var(--lila);border-radius:18px;
+  padding:18px;text-align:center;color:#6B4FA8;font-weight:700;font-size:13.5px;
+}
+.video-ph .play{width:50px;height:50px;border-radius:50%;background:var(--lila);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px}
+
+/* reciclaje */
+.item-residuo{text-align:center;background:var(--cielo-suave);border-radius:20px;padding:18px;margin-bottom:14px}
+.item-residuo .emoji{font-size:52px;display:block}
+.item-residuo b{font-family:'Baloo 2';font-size:19px}
+.canecas{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.caneca{
+  border:none;border-radius:16px;padding:13px 6px;cursor:pointer;font-family:'Nunito';
+  font-weight:800;font-size:12px;color:#fff;display:flex;flex-direction:column;align-items:center;gap:5px;
+  transition:transform .12s ease;
+}
+.caneca:active{transform:scale(.94)}
+.caneca .tapa{font-size:28px}
+.caneca.blanca{background:#B9C4CE;color:#2E3E4C}
+.caneca.negra{background:#3B4650}
+.caneca.verde{background:var(--verde)}
+.feedback{min-height:26px;text-align:center;font-weight:800;font-size:15px;margin-top:12px}
+.feedback.ok{color:var(--verde)}
+.feedback.mal{color:var(--rojo)}
+.contador-reto{font-size:12.5px;font-weight:800;color:#7C99B4;text-align:center;margin-bottom:10px;letter-spacing:.5px}
+
+/* verdadero/falso */
+.vf-frase{font-family:'Baloo 2';font-size:19px;line-height:1.3;text-align:center;background:var(--cielo-suave);border-radius:18px;padding:20px;margin:6px 0 16px}
+.vf-botones{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.vf-botones button{
+  border:none;border-radius:16px;padding:16px;font-family:'Baloo 2';font-size:18px;font-weight:700;color:#fff;cursor:pointer;
+  transition:transform .1s ease;
+}
+.vf-botones button:active{transform:scale(.95)}
+.vf-v{background:var(--verde)}
+.vf-f{background:var(--rojo)}
+
+/* trivia */
+.trivia-crono{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.trivia-crono .num{font-family:'Baloo 2';font-size:15px;color:#7C99B4;font-weight:700}
+.trivia-crono .seg{font-family:'Baloo 2';font-size:26px;font-weight:800;color:var(--sol)}
+.trivia-crono .seg.alerta{color:var(--rojo)}
+.pregunta{font-family:'Baloo 2';font-size:18.5px;line-height:1.25;margin-bottom:14px}
+.opciones{display:flex;flex-direction:column;gap:10px}
+.opcion{
+  border:2.5px solid #EBD9B4;background:#FFFDF7;border-radius:999px;padding:13px 18px;
+  font-family:'Nunito';font-weight:800;font-size:15px;color:var(--tinta);cursor:pointer;text-align:left;
+}
+.opcion:active{transform:scale(.97)}
+.opcion.correcta{background:var(--verde);border-color:var(--verde);color:#fff}
+.opcion.incorrecta{background:var(--rojo);border-color:var(--rojo);color:#fff}
+.opcion.lila{border-color:#DCD0F2;background:#FBF9FE}
+
+/* reflejos */
+.reflejo{
+  border:none;width:100%;border-radius:22px;padding:52px 20px;cursor:pointer;
+  font-family:'Baloo 2';font-size:24px;font-weight:800;color:#fff;margin:14px 0;
+  background:var(--rojo);transition:background .1s ease;
+}
+.reflejo.listo{background:var(--verde)}
+.reflejo.espera{background:#B9C4CE}
+
+/* estación completada / reintento */
+.exito-est{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;padding:30px 0}
+.exito-est .medalla{
+  width:126px;height:126px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;
+  font-size:60px;box-shadow:0 12px 30px rgba(0,0,0,.25);margin-bottom:22px;animation:estampar .5s cubic-bezier(.2,1.6,.4,1);
+}
+.exito-est h1{color:#fff;font-size:29px}
+.exito-est p{margin-top:8px;font-size:16px;opacity:.9;max-width:300px}
+
+/* flash de paso superado */
+.flash-paso{
+  position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;
+  background:rgba(14,95,168,.85);color:#fff;font-family:'Baloo 2';font-size:30px;font-weight:800;text-align:center;
+}
+.flash-paso.visible{display:flex;animation:entrar .25s ease}
+
+/* final */
+.final{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px 0}
+.final h1{color:#fff;font-size:36px;text-shadow:0 3px 10px rgba(0,0,0,.2)}
+.final .sub-f{color:#fff;opacity:.92;font-size:16px;margin:10px 0 24px;line-height:1.45;max-width:320px}
+.codigo-caja{background:#fff;border-radius:22px;padding:22px 30px;box-shadow:var(--sombra)}
+.codigo-caja small{display:block;font-size:12px;font-weight:800;letter-spacing:2px;color:#7C99B4;text-transform:uppercase;margin-bottom:6px}
+.codigo-caja .codigo{font-family:'Baloo 2';font-size:32px;font-weight:800;letter-spacing:4px;color:var(--azul-2)}
+.confeti{position:fixed;top:-10px;width:12px;height:12px;border-radius:3px;animation:caer linear forwards;z-index:60;pointer-events:none}
+@keyframes caer{to{transform:translateY(110dvh) rotate(720deg)}}
+
+/* demo */
+.demo-banda{margin-top:20px;text-align:center}
+.demo-banda small{display:block;color:rgba(255,255,255,.7);font-weight:800;font-size:11px;letter-spacing:1.5px;margin-bottom:8px}
+.demo-botones{display:flex;gap:8px;justify-content:center}
+.demo-botones button{
+  background:rgba(255,255,255,.15);border:1.5px dashed rgba(255,255,255,.5);color:#fff;
+  border-radius:10px;padding:8px 12px;font-family:'Nunito';font-weight:800;font-size:13px;cursor:pointer;
+}
+.oculto{display:none!important}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="ondas">
+    <svg viewBox="0 0 900 600" preserveAspectRatio="none" style="top:8%"><path d="M0 300 Q225 200 450 300 T900 300" stroke="rgba(255,255,255,.5)" stroke-width="2" fill="none"/></svg>
+    <svg viewBox="0 0 900 600" preserveAspectRatio="none" style="top:55%"><path d="M0 300 Q225 380 450 300 T900 300" stroke="rgba(255,255,255,.35)" stroke-width="2" fill="none"/></svg>
+  </div>
+
+  <div class="flash-paso" id="flash-paso"></div>
+
+  <!-- ============ SPLASH ============ -->
+  <section class="vista" id="v-splash">
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+      <div class="marca">
+        <div class="logo-vital">
+          <span class="c1">CONEXIÓN</span>
+          <span class="c2">VITAL</span>
+          <span class="c3">Postobón</span>
+        </div>
+        <span class="logo-parque" id="chip-parque"></span>
+      </div>
+      <div class="familia">
+        <div class="pers p1"><div class="cab"></div><div class="cue"></div></div>
+        <div class="pers p2"><div class="cab"></div><div class="cue"></div></div>
+        <div class="pers p3"><div class="cab"></div><div class="cue"></div></div>
+        <div class="pers p4"><div class="cab"></div><div class="cue"></div></div>
+      </div>
+      <p style="text-align:center;color:#fff;font-size:16.5px;font-weight:700;margin-top:6px">El bienestar se siente,<br>se vive y se decide.</p>
+    </div>
+    <button class="btn" onclick="ir('v-registro')">Acepta el reto</button>
+    <button class="enlace" onclick="ir('v-recuperar')">Ya me registré · continuar mi recorrido</button>
+  </section>
+
+  <!-- ============ REGISTRO ============ -->
+  <section class="vista" id="v-registro">
+    <div class="marca" style="margin-bottom:16px">
+      <div class="logo-vital"><span class="c2" style="font-size:30px">VITAL</span></div>
+    </div>
+    <div class="tarjeta">
+      <h1>Inscríbete y arranca</h1>
+      <p class="sub">Un registro rápido y quedas listo para recorrer las 4 estaciones.</p>
+      <div class="campo" id="c-nombre"><label>Nombre completo</label><input id="f-nombre" type="text" autocomplete="name" placeholder="Ej: Ana María Restrepo"></div>
+      <div class="campo" id="c-correo"><label>Correo electrónico</label><input id="f-correo" type="email" autocomplete="email" placeholder="tucorreo@email.com"></div>
+      <div class="campo" id="c-genero"><label>Género</label>
+        <select id="f-genero"><option value="">Selecciona…</option><option>Femenino</option><option>Masculino</option><option>No binario</option><option>Prefiero no decirlo</option></select>
+      </div>
+      <div class="campo" id="c-nac"><label>Fecha de nacimiento</label><input id="f-nac" type="date"></div>
+      <div class="campo" id="c-tipodoc"><label>Tipo de documento</label>
+        <select id="f-tipodoc"><option value="">Selecciona…</option><option value="CC">Cédula de ciudadanía</option><option value="TI">Tarjeta de identidad</option><option value="CE">Cédula de extranjería</option><option value="PP">Pasaporte</option></select>
+      </div>
+      <div class="campo" id="c-doc"><label>Número de documento</label><input id="f-doc" type="tel" inputmode="numeric" placeholder="Sin puntos ni espacios"></div>
+      <div class="checks">
+        <label class="check"><input type="checkbox" id="f-datos"><span>Acepto la <a href="#" onclick="return false">Política de Tratamiento de Datos Personales</a> de Fundación Postobón (Ley 1581 de 2012).</span></label>
+        <label class="check"><input type="checkbox" id="f-tyc"><span>Acepto los <a href="#" onclick="return false">Términos y Condiciones</a> del premio.</span></label>
+      </div>
+      <div class="aviso-error" id="err-registro"></div>
+      <button class="btn primario" style="margin-top:18px" onclick="registrar()">Registrarme</button>
+    </div>
+    <button class="enlace" onclick="ir('v-recuperar')">Ya tengo registro · continuar</button>
+  </section>
+
+  <!-- ============ RECUPERAR ============ -->
+  <section class="vista" id="v-recuperar">
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+      <div class="tarjeta">
+        <h1>Continúa tu recorrido</h1>
+        <p class="sub">Ingresa el número de documento con el que te registraste y retomamos donde ibas.</p>
+        <div class="campo"><label>Número de documento</label><input id="f-doc-rec" type="tel" inputmode="numeric" placeholder="Sin puntos ni espacios"></div>
+        <div class="aviso-error" id="err-recuperar"></div>
+        <button class="btn primario" style="margin-top:18px" onclick="recuperar()">Continuar</button>
+      </div>
+      <button class="enlace" onclick="ir('v-splash')">Volver</button>
+    </div>
+  </section>
+
+  <!-- ============ INSTRUCCIONES ============ -->
+  <section class="vista" id="v-instrucciones">
+    <div class="marca" style="margin-bottom:14px">
+      <div class="logo-vital"><span class="c2" style="font-size:30px">VITAL</span></div>
+    </div>
+    <div class="tarjeta">
+      <h1>¡Acepta el reto de tu bienestar!</h1>
+      <p class="sub">Cada tótem es un nuevo desafío. Así funciona:</p>
+      <div class="paso-instr"><div class="icono">🚶</div><div><b>Recorre el parque</b><p>Encuentra los 4 tótems de la Familia Vital, en el orden que quieras.</p></div></div>
+      <div class="paso-instr"><div class="icono">📱</div><div><b>Escanea cada QR</b><p>Desde el botón "Escanear QR" de tu pasaporte, o con la cámara de tu celular.</p></div></div>
+      <div class="paso-instr"><div class="icono">⭐</div><div><b>Supera las actividades</b><p>Cada estación tiene varios mini-retos. Complétalos todos para sellar tu pasaporte.</p></div></div>
+      <div class="paso-instr"><div class="icono">🎁</div><div><b>Redime tu premio</b><p>Con las 4 estaciones completas recibes tu código para We Shop.</p></div></div>
+      <button class="btn primario" style="margin-top:22px" onclick="ir('v-pasaporte')">¡Comenzar!</button>
+    </div>
+  </section>
+
+  <!-- ============ PASAPORTE ============ -->
+  <section class="vista" id="v-pasaporte">
+    <div class="saludo"><b id="saludo-nombre"></b><br><span style="font-size:13.5px;opacity:.85">Este es tu progreso de bienestar</span></div>
+    <div class="pasaporte">
+      <h2>Pasaporte Vital</h2>
+      <p class="sub" id="pasaporte-msg"></p>
+      <div class="estaciones" id="grid-estaciones"></div>
+      <div class="barra"><div id="barra-fill"></div></div>
+      <div class="barra-txt" id="barra-txt">0/4 retos completados</div>
+      <button class="btn primario" onclick="ir('v-scan')" id="btn-scan" style="margin-bottom:10px">📷 Escanear QR</button>
+      <button class="btn primario" id="btn-premio" disabled onclick="finalizar()">Redime tu premio</button>
+    </div>
+    <div class="demo-banda" id="demo-banda">
+      <small>MODO DEMO · SIMULAR ESCANEO DE QR</small>
+      <div class="demo-botones">
+        <button onclick="abrirEstacion(1)">QR 1</button>
+        <button onclick="abrirEstacion(2)">QR 2</button>
+        <button onclick="abrirEstacion(3)">QR 3</button>
+        <button onclick="abrirEstacion(4)">QR 4</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ESCÁNER QR ============ -->
+  <section class="vista" id="v-scan">
+    <div class="cab-reto">
+      <button class="volver" onclick="cerrarScanner()">‹</button>
+      <div><h2>Escanea el tótem</h2><span>Apunta la cámara al código QR</span></div>
+    </div>
+    <div class="scan-marco">
+      <video id="scan-video" playsinline muted></video>
+      <div class="scan-guia"><div></div></div>
+    </div>
+    <div class="scan-estado" id="scan-estado">Iniciando cámara…</div>
+    <canvas id="scan-canvas" class="oculto"></canvas>
+  </section>
+
+  <!-- ============ VISTA DE RETO (multi-paso) ============ -->
+  <section class="vista" id="v-reto">
+    <div class="cab-reto">
+      <button class="volver" onclick="salirReto()">‹</button>
+      <div><h2 id="reto-titulo"></h2><span id="reto-sub"></span></div>
+    </div>
+    <div class="pasos-dots" id="pasos-dots"></div>
+    <div class="paso-titulo" id="paso-titulo"></div>
+    <div class="panel-reto" id="panel-reto"></div>
+  </section>
+
+  <!-- ============ ESTACIÓN COMPLETADA ============ -->
+  <section class="vista" id="v-exito-est">
+    <div class="exito-est">
+      <div class="medalla" id="exito-emoji">✅</div>
+      <h1 id="exito-titulo">¡Estación completada!</h1>
+      <p id="exito-msg"></p>
+      <button class="btn" style="margin-top:26px;max-width:280px" onclick="ir('v-pasaporte')">Ver mi Pasaporte Vital</button>
+    </div>
+  </section>
+
+  <!-- ============ REINTENTO ============ -->
+  <section class="vista" id="v-reintento">
+    <div class="exito-est">
+      <div class="medalla">💪</div>
+      <h1>¡Casi lo logras!</h1>
+      <p id="reintento-msg"></p>
+      <button class="btn" style="margin-top:26px;max-width:280px" id="btn-reintentar">Intentar de nuevo</button>
+      <button class="enlace" onclick="ir('v-pasaporte')">Volver al pasaporte</button>
+    </div>
+  </section>
+
+  <!-- ============ FINAL ============ -->
+  <section class="vista" id="v-final">
+    <div class="final">
+      <h1>¡Lo lograste!</h1>
+      <p class="sub-f">Completaste el Circuito Vital.<br>Presenta este código en <b>We Shop</b> para redimir tu premio. Es válido para una única redención.</p>
+      <div class="codigo-caja">
+        <small>Tu código de premio</small>
+        <div class="codigo" id="codigo-final"></div>
+      </div>
+      <button class="btn" style="margin-top:26px;max-width:280px" onclick="copiarCodigo(this)">Copiar código</button>
+    </div>
+  </section>
+</div>
+
+<script>
+/* =====================================================================
+   CONFIGURACIÓN — en producción: /config/{parque}.json
+   ===================================================================== */
+const CONFIG = {
+  parque: (new URLSearchParams(location.search).get('parque') || 'comfama'),
+  parques: {
+    comfama:     { nombre:'COMFAMA' },
+    epm:         { nombre:'EPM' },
+    colsubsidio: { nombre:'COLSUBSIDIO' },
+    arvi:        { nombre:'PARQUE ARVÍ' }
+  },
+  DEMO_MODE: true // producción: false
+};
+
+/* Códigos placeholder — en producción los asigna el backend desde la base cargada */
+const CODIGOS = ['VITAL-7K2M9','VITAL-3XQ81','VITAL-9RT44','VITAL-5PL27','VITAL-8WN63',
+                 'VITAL-2HJ95','VITAL-6BC18','VITAL-4DF72','VITAL-1GK56','VITAL-0SM39'];
+
+const ESTACIONES = [
+  { id:1, nombre:'Movimiento',  emoji:'🏃' },
+  { id:2, nombre:'Conexión',    emoji:'🧘' },
+  { id:3, nombre:'Bienestar',   emoji:'♻️' },
+  { id:4, nombre:'Interacción', emoji:'🧠' }
+];
+
+/* =====================================================================
+   ESTADO
+   ===================================================================== */
+const KEY = 'cv_' + CONFIG.parque;
+let estado = JSON.parse(localStorage.getItem(KEY) || 'null') || {
+  usuario:null, progreso:{1:false,2:false,3:false,4:false}, codigo:null
+};
+function guardar(){ localStorage.setItem(KEY, JSON.stringify(estado)); }
+
+/* timers activos — se limpian al cambiar de paso o de vista */
+let timers = [];
+/* variables del escáner (declaradas aquí para estar listas desde el arranque) */
+let streamCam = null, scanLoop = null;
+function T(fn,ms){ const t=setTimeout(fn,ms); timers.push(t); return t; }
+function I(fn,ms){ const t=setInterval(fn,ms); timers.push(t); return t; }
+function limpiarTimers(){ timers.forEach(t=>{clearTimeout(t);clearInterval(t);}); timers=[]; }
+
+/* =====================================================================
+   NAVEGACIÓN
+   ===================================================================== */
+function ir(id){
+  limpiarTimers();
+  if(id!=='v-scan') detenerCamara();
+  document.querySelectorAll('.vista').forEach(v=>v.classList.remove('activa'));
+  document.getElementById(id).classList.add('activa');
+  window.scrollTo(0,0);
+  if(id==='v-pasaporte') pintarPasaporte();
+  if(id==='v-scan') iniciarScanner();
+}
+
+/* =====================================================================
+   ARRANQUE
+   ===================================================================== */
+let estacionPendiente = null;
+(function init(){
+  const p = CONFIG.parques[CONFIG.parque] || CONFIG.parques.comfama;
+  document.getElementById('chip-parque').textContent = p.nombre;
+  /* Config externa por parque: config/{parque}.json puede sobreescribir nombre y colores
+     sin tocar el código. Si no existe o no carga, la app sigue con los valores embebidos. */
+  fetch('config/'+CONFIG.parque+'.json')
+    .then(r=>r.ok ? r.json() : null)
+    .then(cfg=>{
+      if(!cfg) return;
+      if(cfg.nombre) document.getElementById('chip-parque').textContent = cfg.nombre;
+      if(cfg.colores) Object.entries(cfg.colores).forEach(([k,v])=>
+        document.documentElement.style.setProperty('--'+k, v));
+    }).catch(()=>{});
+  if(!CONFIG.DEMO_MODE) document.getElementById('demo-banda').classList.add('oculto');
+
+  const qEst = parseInt(new URLSearchParams(location.search).get('estacion'));
+  if(qEst>=1 && qEst<=4) estacionPendiente = qEst;
+
+  if(estado.usuario){
+    if(estacionPendiente){ const e=estacionPendiente; estacionPendiente=null; abrirEstacion(e); }
+    else ir('v-pasaporte');
+  } else ir('v-splash');
+})();
+
+/* =====================================================================
+   REGISTRO Y RECUPERACIÓN
+   ===================================================================== */
+function registrar(){
+  const f = {
+    nombre:  document.getElementById('f-nombre').value.trim(),
+    correo:  document.getElementById('f-correo').value.trim(),
+    genero:  document.getElementById('f-genero').value,
+    nac:     document.getElementById('f-nac').value,
+    tipodoc: document.getElementById('f-tipodoc').value,
+    doc:     document.getElementById('f-doc').value.trim().replace(/\D/g,'')
+  };
+  const err = document.getElementById('err-registro');
+  document.querySelectorAll('#v-registro .campo').forEach(c=>c.classList.remove('error'));
+  let falla = null;
+  if(!f.nombre){ falla='c-nombre'; err.textContent='Escribe tu nombre completo.'; }
+  else if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.correo)){ falla='c-correo'; err.textContent='Revisa tu correo electrónico.'; }
+  else if(!f.genero){ falla='c-genero'; err.textContent='Selecciona tu género.'; }
+  else if(!f.nac){ falla='c-nac'; err.textContent='Ingresa tu fecha de nacimiento.'; }
+  else if(!f.tipodoc){ falla='c-tipodoc'; err.textContent='Selecciona el tipo de documento.'; }
+  else if(f.doc.length<5){ falla='c-doc'; err.textContent='Revisa tu número de documento.'; }
+  else if(!document.getElementById('f-datos').checked || !document.getElementById('f-tyc').checked){
+    err.textContent='Debes aceptar la política de datos y los términos y condiciones.';
+    err.classList.add('visible'); return;
+  }
+  if(falla){ document.getElementById(falla).classList.add('error'); err.classList.add('visible'); return; }
+  err.classList.remove('visible');
+
+  estado.usuario = { ...f, parque:CONFIG.parque, registro:new Date().toISOString() };
+  guardar();
+  // >>> INTEGRACIÓN BACKEND: enviar registro a Firebase/Sheet <<<
+  if(estacionPendiente){ const e=estacionPendiente; estacionPendiente=null; abrirEstacion(e); }
+  else ir('v-instrucciones');
+}
+
+function recuperar(){
+  const doc = document.getElementById('f-doc-rec').value.trim().replace(/\D/g,'');
+  const err = document.getElementById('err-recuperar');
+  // >>> INTEGRACIÓN BACKEND: consultar progreso por documento en Firebase <<<
+  if(estado.usuario && estado.usuario.doc === doc){
+    err.classList.remove('visible');
+    ir('v-pasaporte');
+  } else {
+    err.textContent = 'No encontramos un registro con ese documento en este dispositivo. (En producción esta búsqueda se hace en la base de datos central.)';
+    err.classList.add('visible');
+  }
+}
+
+/* =====================================================================
+   PASAPORTE
+   ===================================================================== */
+function pintarPasaporte(){
+  document.getElementById('saludo-nombre').textContent = '¡Hola, ' + (estado.usuario?.nombre.split(' ')[0] || '') + '!';
+  const grid = document.getElementById('grid-estaciones');
+  grid.innerHTML = '';
+  let completas = 0;
+  ESTACIONES.forEach(e=>{
+    const done = estado.progreso[e.id];
+    if(done) completas++;
+    const b = document.createElement('button');
+    b.className = 'estacion' + (done?' completa':'');
+    b.dataset.e = e.id;
+    b.innerHTML = `<div class="est-circulo">${e.emoji}<div class="sello">✓</div></div>
+                   <span class="est-nombre">${e.nombre}</span>
+                   <span class="est-estado">${done?'Completada':'Pendiente'}</span>`;
+    b.onclick = ()=>{ if(!done) ir('v-scan'); };
+    grid.appendChild(b);
+  });
+  document.getElementById('barra-fill').style.width = (completas/4*100)+'%';
+  document.getElementById('barra-txt').textContent = completas+'/4 retos completados';
+  document.getElementById('btn-premio').disabled = completas < 4;
+  document.getElementById('btn-scan').classList.toggle('oculto', completas===4);
+  document.getElementById('pasaporte-msg').textContent = completas===4
+    ? '¡Circuito completo! Redime tu premio.'
+    : 'Encuentra los tótems y escanea el QR de cada uno.';
+}
+
+/* =====================================================================
+   ESCÁNER QR (jsQR + getUserMedia — requiere HTTPS)
+   ===================================================================== */
+function iniciarScanner(){
+  const estadoEl = document.getElementById('scan-estado');
+  const hayNativo = ('BarcodeDetector' in window);
+  const hayLibreria = (typeof jsQR !== 'undefined');
+  if(!hayNativo && !hayLibreria){
+    estadoEl.textContent = 'Este navegador no permite leer QR aquí. Escanea el QR del tótem con la cámara nativa del celular.';
+    return;
+  }
+  if(!navigator.mediaDevices?.getUserMedia){
+    estadoEl.textContent = 'Este navegador no permite usar la cámara aquí. Escanea el QR con la cámara nativa del celular.';
+    return;
+  }
+  estadoEl.textContent = 'Iniciando cámara…';
+  const detector = hayNativo ? new BarcodeDetector({ formats:['qr_code'] }) : null;
+  navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' }, audio:false })
+    .then(stream=>{
+      streamCam = stream;
+      const video = document.getElementById('scan-video');
+      video.srcObject = stream;
+      video.setAttribute('playsinline','');
+      video.play();
+      estadoEl.textContent = 'Apunta al código QR del tótem';
+      const canvas = document.getElementById('scan-canvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently:true });
+      let ocupado = false;
+      function procesar(texto){
+        const n = interpretarQR(texto);
+        if(n){ detenerCamara(); abrirEstacion(n); return true; }
+        estadoEl.textContent = 'Ese QR no es de Conexión Vital. Busca el del tótem.';
+        return false;
+      }
+      function tick(){
+        if(!streamCam) return;
+        if(video.readyState === video.HAVE_ENOUGH_DATA && !ocupado){
+          if(detector){
+            ocupado = true;
+            detector.detect(video).then(codigos=>{
+              ocupado = false;
+              if(codigos.length && procesar(codigos[0].rawValue)) return;
+              scanLoop = requestAnimationFrame(tick);
+            }).catch(()=>{ ocupado = false; scanLoop = requestAnimationFrame(tick); });
+            return;
+          } else {
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            ctx.drawImage(video,0,0,canvas.width,canvas.height);
+            const img = ctx.getImageData(0,0,canvas.width,canvas.height);
+            const qr = jsQR(img.data, img.width, img.height, { inversionAttempts:'dontInvert' });
+            if(qr && qr.data && procesar(qr.data)) return;
+          }
+        }
+        scanLoop = requestAnimationFrame(tick);
+      }
+      scanLoop = requestAnimationFrame(tick);
+    })
+    .catch(()=>{
+      estadoEl.textContent = 'No pudimos acceder a la cámara. Revisa el permiso, o escanea el QR con la cámara nativa del celular.';
+    });
+}
+function interpretarQR(texto){
+  try{ const u = new URL(texto); const n = parseInt(u.searchParams.get('estacion')); if(n>=1&&n<=4) return n; }catch(e){}
+  const m = texto.match(/estacion[=:\s]*([1-4])/i);
+  return m ? parseInt(m[1]) : null;
+}
+function detenerCamara(){
+  if(scanLoop) cancelAnimationFrame(scanLoop);
+  scanLoop = null;
+  if(streamCam){ streamCam.getTracks().forEach(t=>t.stop()); streamCam = null; }
+}
+function cerrarScanner(){ detenerCamara(); ir('v-pasaporte'); }
+
+/* =====================================================================
+   MOTOR DE RETOS MULTI-PASO
+   ===================================================================== */
+let estActual = null, pasoActual = 0;
+
+const RETOS = {
+  1: { titulo:'¡Mueve el cuerpo!', sub:'Estación Movimiento · La chispa de la casa', tema:'tema-1',
+       pasos:[
+         { titulo:'Lanza el dado', render: pasoDado },
+         { titulo:'Reto de equilibrio', render: pasoEquilibrio },
+         { titulo:'Pregunta express', render: pasoPreguntaMov }
+       ]},
+  2: { titulo:'Respira y conéctate', sub:'Estación Conexión · El pilar afectivo', tema:'tema-2',
+       pasos:[
+         { titulo:'Respiración guiada', render: pasoRespiracion },
+         { titulo:'Reto de concentración', render: pasoConcentracion },
+         { titulo:'Tu intención del día', render: pasoIntencion }
+       ]},
+  3: { titulo:'Recicla bien, vive mejor', sub:'Estación Bienestar · El bonachón optimista', tema:'tema-3',
+       pasos:[
+         { titulo:'Clasifica los residuos', render: pasoReciclaje },
+         { titulo:'¿Verdadero o falso?', render: pasoVF }
+       ]},
+  4: { titulo:'Pon a prueba tu mente', sub:'Estación Interacción · Vibra relajada', tema:'tema-4',
+       pasos:[
+         { titulo:'Trivia contra el reloj', render: pasoTrivia },
+         { titulo:'Reto de reflejos', render: pasoReflejos }
+       ]}
+};
+
+function abrirEstacion(n){
+  if(!estado.usuario){ estacionPendiente=n; ir('v-registro'); return; }
+  if(estado.progreso[n]){ ir('v-pasaporte'); return; }
+  estActual = n; pasoActual = 0;
+  const r = RETOS[n];
+  const vista = document.getElementById('v-reto');
+  vista.className = 'vista ' + r.tema;
+  document.getElementById('reto-titulo').textContent = r.titulo;
+  document.getElementById('reto-sub').textContent = r.sub;
+  montarPaso();
+  limpiarTimers();
+  document.querySelectorAll('.vista').forEach(v=>v.classList.remove('activa'));
+  vista.classList.add('activa');
+  window.scrollTo(0,0);
+}
+
+function montarPaso(){
+  limpiarTimers();
+  const r = RETOS[estActual];
+  const dots = document.getElementById('pasos-dots');
+  dots.innerHTML = r.pasos.map((_,i)=>
+    `<div class="dot ${i<pasoActual?'hecho':i===pasoActual?'activo':''}"></div>`).join('');
+  document.getElementById('paso-titulo').textContent =
+    'Paso '+(pasoActual+1)+' de '+r.pasos.length+' · '+r.pasos[pasoActual].titulo;
+  const panel = document.getElementById('panel-reto');
+  panel.innerHTML = '';
+  r.pasos[pasoActual].render(panel);
+  window.scrollTo(0,0);
+}
+
+function pasoSuperado(){
+  limpiarTimers();
+  const r = RETOS[estActual];
+  if(pasoActual >= r.pasos.length - 1){ completarEstacion(estActual); return; }
+  const flash = document.getElementById('flash-paso');
+  flash.innerHTML = '¡Paso superado! ⭐<br><span style="font-size:16px;font-weight:700;opacity:.85">Vamos al siguiente…</span>';
+  flash.classList.add('visible');
+  setTimeout(()=>{
+    flash.classList.remove('visible');
+    pasoActual++;
+    montarPaso();
+  }, 1100);
+}
+
+function pasoFallido(msg){
+  limpiarTimers();
+  document.getElementById('reintento-msg').textContent = msg;
+  document.getElementById('btn-reintentar').onclick = ()=>{
+    document.querySelectorAll('.vista').forEach(v=>v.classList.remove('activa'));
+    document.getElementById('v-reto').classList.add('activa');
+    montarPaso();
+  };
+  ir('v-reintento');
+}
+
+function salirReto(){ limpiarTimers(); ir('v-pasaporte'); }
+
+function completarEstacion(n){
+  estado.progreso[n] = true;
+  guardar();
+  // >>> INTEGRACIÓN BACKEND: reportar estación completada <<<
+  const e = ESTACIONES.find(x=>x.id===n);
+  document.getElementById('exito-emoji').textContent = e.emoji;
+  document.getElementById('exito-titulo').textContent = '¡'+e.nombre+' completada!';
+  const faltan = 4 - Object.values(estado.progreso).filter(Boolean).length;
+  document.getElementById('exito-msg').textContent = faltan>0
+    ? 'Sellaste tu pasaporte. Te '+(faltan===1?'falta 1 estación':'faltan '+faltan+' estaciones')+'.'
+    : '¡Sellaste las 4 estaciones! Tu premio te espera.';
+  ir('v-exito-est');
+}
+
+/* =====================================================================
+   E1 · MOVIMIENTO
+   ===================================================================== */
+const RETOS_FISICOS = [
+  '10 sentadillas 🔥','15 saltos de tijera ⚡','20 segundos de plancha 🧱',
+  'Trota en el puesto ¡a tope! 🏃','10 estiramientos de brazos 🙆','Baila como quieras 💃'
+];
+function pasoDado(panel){
+  panel.innerHTML = `
+    <div class="centro">
+      <p class="sub" style="margin:0">Yo soy pura energía, ¿me sigues el ritmo?<br><b>Lanza el dado y supera el reto físico.</b></p>
+      <div class="dado" id="dado">?</div>
+      <div class="reto-fisico" id="reto-fisico">&nbsp;</div>
+      <div class="crono oculto" id="crono-mov">0:30</div>
+      <button class="btn primario" id="btn-dado">Lanzar el dado</button>
+      <button class="btn mini oculto" id="btn-mov-listo" style="margin-top:12px;background:var(--verde);color:#fff">¡Lo logré! 💪</button>
+    </div>`;
+  const dado = panel.querySelector('#dado');
+  const btn = panel.querySelector('#btn-dado');
+  panel.querySelector('#btn-mov-listo').onclick = pasoSuperado;
+  btn.onclick = ()=>{
+    btn.disabled = true;
+    dado.classList.add('girando');
+    let ticks = 0;
+    const anim = I(()=>{
+      dado.textContent = 1 + Math.floor(Math.random()*6);
+      if(++ticks >= 14){
+        clearInterval(anim);
+        dado.classList.remove('girando');
+        const cara = 1 + Math.floor(Math.random()*6);
+        dado.textContent = cara;
+        panel.querySelector('#reto-fisico').textContent = RETOS_FISICOS[cara-1];
+        btn.classList.add('oculto');
+        const el = panel.querySelector('#crono-mov');
+        el.classList.remove('oculto');
+        let t = 30;
+        el.textContent = '0:30';
+        I(()=>{
+          t--;
+          if(t<0){ limpiarTimers(); el.textContent='¡Tiempo!'; panel.querySelector('#btn-mov-listo').classList.remove('oculto'); }
+          else { el.textContent='0:'+String(t).padStart(2,'0'); if(t<=5) el.classList.add('alerta'); }
+        },1000);
+      }
+    },90);
+  };
+}
+function pasoEquilibrio(panel){
+  panel.innerHTML = `
+    <div class="centro">
+      <p class="sub" style="margin:0"><b>Reto de equilibrio:</b> párate en un solo pie,<br>brazos abiertos, y aguanta 20 segundos.<br>¿Fácil? Cierra un ojo 😉</p>
+      <div style="font-size:64px;margin:18px 0">🦩</div>
+      <div class="crono oculto" id="crono-eq">0:20</div>
+      <button class="btn primario" id="btn-eq">¡Estoy en posición!</button>
+      <button class="btn mini oculto" id="btn-eq-listo" style="margin-top:12px;background:var(--verde);color:#fff">¡Aguanté! 💪</button>
+    </div>`;
+  panel.querySelector('#btn-eq-listo').onclick = pasoSuperado;
+  panel.querySelector('#btn-eq').onclick = function(){
+    this.classList.add('oculto');
+    const el = panel.querySelector('#crono-eq');
+    el.classList.remove('oculto');
+    let t = 20;
+    I(()=>{
+      t--;
+      if(t<0){ limpiarTimers(); el.textContent='¡Tiempo!'; panel.querySelector('#btn-eq-listo').classList.remove('oculto'); }
+      else { el.textContent='0:'+String(t).padStart(2,'0'); if(t<=5) el.classList.add('alerta'); }
+    },1000);
+  };
+}
+function pasoPreguntaMov(panel){
+  const q = { p:'¿Cuántos minutos de actividad física al día recomienda la OMS para adultos?', ops:['5 minutos','Al menos 30 minutos','Solo el fin de semana','No es necesario'], ok:1 };
+  panel.innerHTML = `
+    <div class="pregunta">${q.p}</div>
+    <div class="opciones" id="ops"></div>
+    <div class="feedback" id="fb"></div>`;
+  const cont = panel.querySelector('#ops');
+  const fb = panel.querySelector('#fb');
+  q.ops.forEach((op,i)=>{
+    const b = document.createElement('button');
+    b.className='opcion'; b.textContent=op;
+    b.onclick = ()=>{
+      if(i===q.ok){
+        b.classList.add('correcta');
+        fb.textContent='¡Correcto! ✅'; fb.className='feedback ok';
+        T(pasoSuperado, 900);
+      } else {
+        b.classList.add('incorrecta');
+        fb.textContent='Intenta otra vez 😉'; fb.className='feedback mal';
+        T(()=>{ b.classList.remove('incorrecta'); fb.textContent=''; }, 900);
+      }
+    };
+    cont.appendChild(b);
+  });
+}
+
+/* =====================================================================
+   E2 · CONEXIÓN
+   ===================================================================== */
+function pasoRespiracion(panel){
+  panel.innerHTML = `
+    <div class="centro" style="flex:1;display:flex;flex-direction:column;justify-content:center">
+      <p class="sub" style="margin:0">Bajemos las revoluciones. Sigue el círculo<br>y completa <b>3 respiraciones profundas</b>.</p>
+      <div class="circulo-resp" id="circ">Toca para<br>empezar</div>
+      <div class="mini-eti" id="ciclos">&nbsp;</div>
+      <button class="btn mini oculto" id="btn-resp" style="margin-top:16px;background:var(--lila);color:#fff">Continuar 💜</button>
+    </div>`;
+  const c = panel.querySelector('#circ');
+  const ciclosEl = panel.querySelector('#ciclos');
+  panel.querySelector('#btn-resp').onclick = pasoSuperado;
+  let activo = false;
+  c.onclick = ()=>{
+    if(activo) return;
+    activo = true;
+    let ciclo = 1;
+    const TOTAL = 3;
+    function fase(){
+      ciclosEl.textContent = 'Respiración '+ciclo+' de '+TOTAL;
+      c.innerHTML = 'Inhala…'; c.classList.add('grande'); c.classList.remove('chico');
+      T(()=>{
+        c.innerHTML = 'Sostén…';
+        T(()=>{
+          c.innerHTML = 'Exhala…'; c.classList.remove('grande'); c.classList.add('chico');
+          T(()=>{
+            if(ciclo < TOTAL){ ciclo++; fase(); }
+            else {
+              c.classList.remove('chico');
+              c.innerHTML = '¡Muy bien! 💜';
+              ciclosEl.textContent = 'Pausa completada';
+              panel.querySelector('#btn-resp').classList.remove('oculto');
+            }
+          }, 4000);
+        }, 2000);
+      }, 4000);
+    }
+    fase();
+  };
+}
+function pasoConcentracion(panel){
+  const RONDAS = [
+    { base:'🌿', dif:'🍀' },
+    { base:'💧', dif:'💦' },
+    { base:'🌙', dif:'⭐' }
+  ];
+  let ronda = 0;
+  panel.innerHTML = `
+    <div class="centro">
+      <p class="sub" style="margin:0"><b>Ojo de águila:</b> toca el símbolo diferente.<br>3 rondas para demostrar tu concentración.</p>
+      <div class="mini-eti" style="margin-top:10px" id="conc-ronda"></div>
+      <div class="grid-conc" id="grid"></div>
+      <div class="feedback" id="fb"></div>
+    </div>`;
+  function pintar(){
+    panel.querySelector('#conc-ronda').textContent = 'Ronda '+(ronda+1)+' de 3';
+    const grid = panel.querySelector('#grid');
+    grid.innerHTML = '';
+    const r = RONDAS[ronda];
+    const difIdx = Math.floor(Math.random()*9);
+    for(let i=0;i<9;i++){
+      const b = document.createElement('button');
+      b.textContent = i===difIdx ? r.dif : r.base;
+      b.onclick = ()=>{
+        const fb = panel.querySelector('#fb');
+        if(i===difIdx){
+          fb.textContent='¡Bien visto! ✅'; fb.className='feedback ok';
+          T(()=>{
+            fb.textContent=''; 
+            ronda++;
+            if(ronda<3) pintar(); else pasoSuperado();
+          }, 700);
+        } else {
+          b.classList.add('mal');
+          fb.textContent='Mira con calma 👀'; fb.className='feedback mal';
+          T(()=>{ b.classList.remove('mal'); fb.textContent=''; }, 600);
+        }
+      };
+      grid.appendChild(b);
+    }
+  }
+  pintar();
+}
+function pasoIntencion(panel){
+  panel.innerHTML = `
+    <div class="centro">
+      <div class="video-ph">
+        <div class="play">▶</div>
+        Aquí irá el video "Activa tu bienestar"<br>(contenido final por producir)
+      </div>
+      <p class="sub" style="margin-top:16px"><b>Llévate un mensaje:</b> elige tu intención para el resto del día.</p>
+      <div class="chips" id="chips"></div>
+      <button class="btn mini" id="btn-int" disabled style="background:var(--lila);color:#fff">Guardar mi intención 💜</button>
+    </div>`;
+  const OPCIONES = ['Moverme más 🏃','Respirar con calma 🌬️','Compartir en familia 💙','Tomar más agua 💧'];
+  const chipsEl = panel.querySelector('#chips');
+  const btn = panel.querySelector('#btn-int');
+  OPCIONES.forEach(txt=>{
+    const c = document.createElement('button');
+    c.className='chip'; c.textContent=txt;
+    c.onclick = ()=>{
+      chipsEl.querySelectorAll('.chip').forEach(x=>x.classList.remove('sel'));
+      c.classList.add('sel');
+      btn.disabled = false;
+    };
+    chipsEl.appendChild(c);
+  });
+  btn.onclick = pasoSuperado;
+}
+
+/* =====================================================================
+   E3 · BIENESTAR
+   ===================================================================== */
+const RESIDUOS = [
+  { emoji:'🍾', nombre:'Botella plástica', caneca:'blanca' },
+  { emoji:'🍌', nombre:'Cáscara de banano', caneca:'verde' },
+  { emoji:'📦', nombre:'Caja de cartón limpia', caneca:'blanca' },
+  { emoji:'🧻', nombre:'Servilleta usada', caneca:'negra' },
+  { emoji:'🍎', nombre:'Restos de fruta', caneca:'verde' },
+  { emoji:'🥤', nombre:'Vaso desechable sucio', caneca:'negra' }
+];
+function pasoReciclaje(panel){
+  let idx = 0, aciertos = 0, bloqueo = false;
+  panel.innerHTML = `
+    <div class="contador-reto" id="cont"></div>
+    <div class="item-residuo"><span class="emoji" id="emj"></span><b id="nom"></b></div>
+    <p class="sub centro" style="margin-bottom:14px">¿A qué caneca va este residuo?</p>
+    <div class="canecas">
+      <button class="caneca blanca" data-c="blanca"><span class="tapa">🗑️</span>Blanca<br>Aprovechables</button>
+      <button class="caneca negra" data-c="negra"><span class="tapa">🗑️</span>Negra<br>No aprovechables</button>
+      <button class="caneca verde" data-c="verde"><span class="tapa">🗑️</span>Verde<br>Orgánicos</button>
+    </div>
+    <div class="feedback" id="fb"></div>`;
+  function pintar(){
+    const r = RESIDUOS[idx];
+    panel.querySelector('#cont').textContent = 'Residuo '+(idx+1)+' de '+RESIDUOS.length+' · Aciertos: '+aciertos;
+    panel.querySelector('#emj').textContent = r.emoji;
+    panel.querySelector('#nom').textContent = r.nombre;
+    const fb = panel.querySelector('#fb'); fb.textContent=''; fb.className='feedback';
+  }
+  panel.querySelectorAll('.caneca').forEach(b=>{
+    b.onclick = ()=>{
+      if(bloqueo) return;
+      bloqueo = true;
+      const r = RESIDUOS[idx];
+      const fb = panel.querySelector('#fb');
+      if(b.dataset.c === r.caneca){ aciertos++; fb.textContent='¡Correcto! ✅'; fb.className='feedback ok'; }
+      else { fb.textContent='Iba en la caneca '+r.caneca+' ❌'; fb.className='feedback mal'; }
+      T(()=>{
+        bloqueo = false;
+        idx++;
+        if(idx < RESIDUOS.length) pintar();
+        else if(aciertos >= 5) pasoSuperado();
+        else pasoFallido('Acertaste '+aciertos+' de '+RESIDUOS.length+' residuos. Necesitas mínimo 5 para superar este paso.');
+      }, 1100);
+    };
+  });
+  pintar();
+}
+function pasoVF(panel){
+  const FRASES = [
+    { f:'Una botella con restos de comida se puede reciclar sin lavarla.', v:false },
+    { f:'El vidrio se puede reciclar infinitas veces sin perder calidad.', v:true },
+    { f:'Los residuos orgánicos pueden convertirse en compost para las plantas.', v:true }
+  ];
+  let idx = 0, aciertos = 0, bloqueo = false;
+  panel.innerHTML = `
+    <div class="contador-reto" id="cont"></div>
+    <div class="vf-frase" id="frase"></div>
+    <div class="vf-botones">
+      <button class="vf-v" data-v="true">✔ Verdadero</button>
+      <button class="vf-f" data-v="false">✘ Falso</button>
+    </div>
+    <div class="feedback" id="fb"></div>`;
+  function pintar(){
+    panel.querySelector('#cont').textContent = 'Afirmación '+(idx+1)+' de '+FRASES.length+' · Aciertos: '+aciertos;
+    panel.querySelector('#frase').textContent = FRASES[idx].f;
+    const fb = panel.querySelector('#fb'); fb.textContent=''; fb.className='feedback';
+  }
+  panel.querySelectorAll('.vf-botones button').forEach(b=>{
+    b.onclick = ()=>{
+      if(bloqueo) return;
+      bloqueo = true;
+      const ok = (b.dataset.v === 'true') === FRASES[idx].v;
+      const fb = panel.querySelector('#fb');
+      if(ok){ aciertos++; fb.textContent='¡Correcto! ✅'; fb.className='feedback ok'; }
+      else { fb.textContent='Era '+(FRASES[idx].v?'verdadero':'falso')+' ❌'; fb.className='feedback mal'; }
+      T(()=>{
+        bloqueo = false;
+        idx++;
+        if(idx < FRASES.length) pintar();
+        else if(aciertos >= 2) pasoSuperado();
+        else pasoFallido('Acertaste '+aciertos+' de '+FRASES.length+'. Necesitas mínimo 2 para superar este paso.');
+      }, 1100);
+    };
+  });
+  pintar();
+}
+
+/* =====================================================================
+   E4 · INTERACCIÓN
+   ===================================================================== */
+const TRIVIA = [
+  { p:'¿Cuál de estos alimentos es una buena fuente de proteína?', ops:['Manzana','Arroz','Pollo','Lechuga'], ok:2 },
+  { p:'¿Cuál es la mejor bebida para hidratarte durante el ejercicio?', ops:['Agua','Café','Gaseosa','Jugo con azúcar'], ok:0 },
+  { p:'Dormir bien ayuda a…', ops:['Nada en especial','La memoria y el ánimo','Solo a los niños','Subir de peso'], ok:1 },
+  { p:'Una pausa activa en el trabajo o estudio sirve para…', ops:['Perder tiempo','Reducir estrés y activar el cuerpo','Comer más','Revisar redes'], ok:1 },
+  { p:'¿Cada cuánto se recomienda levantarse si trabajas sentado?', ops:['Cada hora','Una vez al día','Nunca','Solo al almorzar'], ok:0 }
+];
+function pasoTrivia(panel){
+  let idx=0, aciertos=0, bloqueo=false, timer=null;
+  panel.innerHTML = `
+    <div class="trivia-crono">
+      <span class="num" id="num"></span>
+      <span class="seg" id="seg">15</span>
+    </div>
+    <div class="pregunta" id="preg"></div>
+    <div class="opciones" id="ops"></div>
+    <div class="feedback" id="fb"></div>`;
+  function pintar(){
+    if(timer) clearInterval(timer);
+    const q = TRIVIA[idx];
+    panel.querySelector('#num').textContent = 'Pregunta '+(idx+1)+' de '+TRIVIA.length;
+    panel.querySelector('#preg').textContent = q.p;
+    const fb = panel.querySelector('#fb'); fb.textContent=''; fb.className='feedback';
+    const cont = panel.querySelector('#ops');
+    cont.innerHTML='';
+    q.ops.forEach((op,i)=>{
+      const b = document.createElement('button');
+      b.className='opcion'; b.textContent=op;
+      b.onclick = ()=>responder(i,b);
+      cont.appendChild(b);
+    });
+    bloqueo=false;
+    let t = 15;
+    const seg = panel.querySelector('#seg');
+    seg.textContent = t; seg.classList.remove('alerta');
+    timer = I(()=>{
+      t--;
+      seg.textContent = t;
+      if(t<=5) seg.classList.add('alerta');
+      if(t<=0){ clearInterval(timer); responder(-1,null); }
+    },1000);
+  }
+  function responder(i, btn){
+    if(bloqueo) return;
+    bloqueo = true;
+    if(timer) clearInterval(timer);
+    const q = TRIVIA[idx];
+    const fb = panel.querySelector('#fb');
+    const botones = panel.querySelectorAll('#ops .opcion');
+    botones[q.ok].classList.add('correcta');
+    if(i === q.ok){ aciertos++; fb.textContent='¡Correcto! ✅'; fb.className='feedback ok'; }
+    else {
+      if(btn) btn.classList.add('incorrecta');
+      fb.textContent = i===-1 ? '¡Se acabó el tiempo! ⏱️' : 'Ups, no era esa ❌';
+      fb.className='feedback mal';
+    }
+    T(()=>{
+      idx++;
+      if(idx < TRIVIA.length) pintar();
+      else if(aciertos >= 4) pasoSuperado();
+      else pasoFallido('Acertaste '+aciertos+' de '+TRIVIA.length+' preguntas. Necesitas mínimo 4 para superar este paso.');
+    },1300);
+  }
+  pintar();
+}
+function pasoReflejos(panel){
+  let ronda = 0, tiempos = [], esperando = false, inicioVerde = 0;
+  panel.innerHTML = `
+    <div class="centro">
+      <p class="sub" style="margin:0"><b>Reto de reflejos:</b> espera a que el botón<br>se ponga <b style="color:var(--verde)">verde</b> y tócalo lo más rápido posible.<br>3 rondas. Si tocas antes, la ronda se repite.</p>
+      <div class="mini-eti" style="margin-top:12px" id="ref-ronda">Ronda 1 de 3</div>
+      <button class="reflejo espera" id="caja">Toca para empezar</button>
+      <div class="feedback" id="fb"></div>
+    </div>`;
+  const caja = panel.querySelector('#caja');
+  const fb = panel.querySelector('#fb');
+  function prepararRonda(){
+    panel.querySelector('#ref-ronda').textContent = 'Ronda '+(ronda+1)+' de 3';
+    caja.className = 'reflejo';
+    caja.textContent = 'Espera…';
+    esperando = true;
+    T(()=>{
+      if(!esperando) return;
+      caja.classList.add('listo');
+      caja.textContent = '¡TOCA YA!';
+      inicioVerde = performance.now();
+      esperando = false;
+    }, 1500 + Math.random()*2200);
+  }
+  caja.onclick = ()=>{
+    if(caja.classList.contains('espera')){ prepararRonda(); return; }
+    if(esperando){
+      limpiarTimers();
+      esperando = false;
+      fb.textContent='¡Muy pronto! 😅 Otra vez…'; fb.className='feedback mal';
+      T(()=>{ fb.textContent=''; prepararRonda(); }, 1000);
+      return;
+    }
+    if(caja.classList.contains('listo')){
+      const ms = Math.round(performance.now() - inicioVerde);
+      tiempos.push(ms);
+      fb.textContent = '¡'+ms+' ms! ⚡'; fb.className='feedback ok';
+      ronda++;
+      if(ronda < 3){
+        T(()=>{ fb.textContent=''; prepararRonda(); }, 900);
+      } else {
+        const prom = Math.round(tiempos.reduce((a,b)=>a+b,0)/tiempos.length);
+        caja.className = 'reflejo espera';
+        caja.textContent = 'Promedio: '+prom+' ms 🏆';
+        caja.onclick = null;
+        T(pasoSuperado, 1300);
+      }
+    }
+  };
+}
+
+/* =====================================================================
+   FINAL
+   ===================================================================== */
+function finalizar(){
+  if(!estado.codigo){
+    // >>> INTEGRACIÓN BACKEND: pedir código único a Firebase (transacción) <<<
+    const usados = JSON.parse(localStorage.getItem('cv_codigos_usados')||'[]');
+    estado.codigo = CODIGOS.find(c=>!usados.includes(c)) || 'AGOTADO';
+    usados.push(estado.codigo);
+    localStorage.setItem('cv_codigos_usados', JSON.stringify(usados));
+    guardar();
+  }
+  document.getElementById('codigo-final').textContent = estado.codigo;
+  ir('v-final');
+  lanzarConfeti();
+}
+function lanzarConfeti(){
+  const colores = ['#9BD4F5','#F5A623','#6FBF73','#9B7FD4','#FFFFFF'];
+  for(let i=0;i<44;i++){
+    const c = document.createElement('div');
+    c.className='confeti';
+    c.style.left = Math.random()*100+'%';
+    c.style.background = colores[i%colores.length];
+    c.style.animationDuration = (2.4+Math.random()*2.2)+'s';
+    c.style.animationDelay = (Math.random()*1.2)+'s';
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(), 6000);
+  }
+}
+function copiarCodigo(btn){
+  navigator.clipboard?.writeText(estado.codigo).then(()=>{
+    btn.textContent='¡Copiado!';
+    setTimeout(()=>btn.textContent='Copiar código',1600);
+  });
+}
+</script>
+</body>
+</html>
