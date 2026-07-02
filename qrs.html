@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de QRs · Conexión Vital</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+body{font-family:system-ui,sans-serif;background:#EAF6FE;color:#123A5C;margin:0;padding:30px 20px;display:flex;flex-direction:column;align-items:center}
+h1{font-size:24px;margin-bottom:4px}
+p{color:#4A6B8A;margin:4px 0 20px;text-align:center;max-width:520px}
+.controles{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:26px}
+input,select{padding:11px 14px;border:2px solid #B9DCF5;border-radius:12px;font-size:15px;min-width:260px}
+select{min-width:160px}
+button{padding:11px 22px;border:none;border-radius:12px;background:#1B87D4;color:#fff;font-weight:700;font-size:15px;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px;width:100%;max-width:1000px}
+.qr-card{background:#fff;border-radius:18px;padding:20px;text-align:center;box-shadow:0 6px 18px rgba(14,95,168,.12)}
+.qr-card h3{margin:0 0 4px;font-size:16px}
+.qr-card small{color:#7C99B4;font-size:11.5px;word-break:break-all;display:block;margin-top:10px}
+.qr{display:flex;justify-content:center;margin-top:12px}
+@media print{.controles,button,p.nota{display:none}.grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<h1>Generador de QRs · Conexión Vital</h1>
+<p>Escribe la URL donde quedó publicada la app (GitHub Pages), elige el parque y genera los 5 QRs: el de bienvenida (arco) y los 4 de las estaciones. Usa Ctrl+P para imprimirlos o haz captura para pruebas.</p>
+<div class="controles">
+  <input id="base" type="url" placeholder="https://usuario.github.io/conexion-vital/">
+  <select id="parque">
+    <option value="comfama">Comfama</option>
+    <option value="epm">EPM</option>
+    <option value="colsubsidio">Colsubsidio</option>
+    <option value="arvi">Parque Arví</option>
+  </select>
+  <button onclick="generar()">Generar QRs</button>
+</div>
+<div class="grid" id="grid"></div>
+<script>
+const PUNTOS = [
+  { titulo:'Arco de bienvenida', desc:'Registro e inicio', extra:'' },
+  { titulo:'Tótem 1 · Movimiento', desc:'¡Mueve el cuerpo!', extra:'&estacion=1' },
+  { titulo:'Tótem 2 · Conexión', desc:'Respira y conéctate', extra:'&estacion=2' },
+  { titulo:'Tótem 3 · Bienestar', desc:'Recicla bien, vive mejor', extra:'&estacion=3' },
+  { titulo:'Tótem 4 · Interacción', desc:'Pon a prueba tu mente', extra:'&estacion=4' }
+];
+function generar(){
+  let base = document.getElementById('base').value.trim();
+  if(!base){ alert('Escribe la URL de la app publicada.'); return; }
+  if(!base.endsWith('/')) base += '/';
+  const parque = document.getElementById('parque').value;
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  PUNTOS.forEach(p=>{
+    const url = base + '?parque=' + parque + p.extra;
+    const card = document.createElement('div');
+    card.className = 'qr-card';
+    card.innerHTML = `<h3>${p.titulo}</h3><span style="color:#4A6B8A;font-size:13px">${p.desc}</span><div class="qr"></div><small>${url}</small>`;
+    grid.appendChild(card);
+    new QRCode(card.querySelector('.qr'), { text:url, width:180, height:180, correctLevel:QRCode.CorrectLevel.M });
+  });
+}
+</script>
+</body>
+</html>
