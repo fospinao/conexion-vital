@@ -13,7 +13,7 @@
   --verde:#6FBF73; --verde-suave:#DFF3E0;
   --lila:#9B7FD4;  --lila-suave:#EFE9FA;
   --cielo:#57AEE4; --cielo-suave:#E3F2FC;
-  --sol:#F5A623;   --sol-suave:#FDF1DC;
+  --sol:#F58220;   --sol-suave:#FDE9D7;
   --tinta:#123A5C; --blanco:#FFFFFF;
   --rojo:#E45B5B;
   --radio:22px;
@@ -40,11 +40,12 @@ body{
 
 /* ===== marca ===== */
 .marca{text-align:center;margin-bottom:6px}
-.marca .logo-vital{font-family:'Baloo 2';line-height:.95;color:#fff}
-.marca .logo-vital .c1{display:block;font-size:22px;font-weight:700;letter-spacing:4px}
-.marca .logo-vital .c2{display:block;font-size:46px;font-weight:800;color:var(--azul-claro);letter-spacing:2px}
-.marca .logo-vital .c3{display:block;font-size:15px;font-style:italic;font-weight:600;color:#fff;opacity:.9}
-.logo-parque{display:inline-block;margin-top:10px;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.45);color:#fff;font-weight:800;font-size:13px;letter-spacing:1px;padding:6px 16px;border-radius:999px}
+.marca .logo-cv{width:min(230px,64%);display:block;margin:0 auto;filter:drop-shadow(0 4px 10px rgba(0,0,0,.18))}
+.marca .logo-cv.mini{width:150px}
+.logo-parque{display:inline-block;margin-top:14px;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.45);color:#fff;font-weight:800;font-size:13px;letter-spacing:1px;padding:6px 16px;border-radius:999px}
+.sello-fundacion{display:flex;justify-content:center;margin-top:18px}
+.sello-fundacion span{background:#fff;border-radius:14px;padding:8px 16px;box-shadow:0 4px 14px rgba(0,0,0,.15)}
+.sello-fundacion img{height:34px;display:block}
 
 /* ===== tarjetas y controles ===== */
 .tarjeta{background:var(--blanco);border-radius:var(--radio);box-shadow:var(--sombra);padding:24px 20px}
@@ -77,15 +78,11 @@ h2{font-family:'Baloo 2';font-size:21px;color:var(--tinta)}
 .btn.fantasma{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.6);box-shadow:none}
 .btn:disabled{opacity:.45;pointer-events:none}
 .btn.mini{padding:12px;font-size:15.5px}
+.btn.cargando{opacity:.6;pointer-events:none}
 .enlace{background:none;border:none;color:#fff;font-family:'Nunito';font-weight:700;font-size:14.5px;text-decoration:underline;margin-top:16px;cursor:pointer;align-self:center}
 
 /* ===== familia ===== */
-.familia{display:flex;justify-content:center;gap:8px;margin:18px 0 8px}
-.pers{width:44px;height:64px}
-.pers .cab{width:22px;height:22px;border-radius:50%;background:#fff;margin:0 auto}
-.pers .cue{width:34px;height:36px;border-radius:12px;background:#fff;margin:4px auto 0}
-.pers.p2 .cab,.pers.p2 .cue,.pers.p4 .cab,.pers.p4 .cue{background:var(--azul-claro)}
-.pers.p3{transform:scale(.85)}.pers.p4{transform:scale(.8)}
+.familia-img{display:block;margin:14px auto 6px;width:min(300px,80%);filter:drop-shadow(0 10px 22px rgba(0,0,0,.28))}
 
 /* ===== instrucciones ===== */
 .paso-instr{display:flex;gap:14px;align-items:flex-start;margin-top:16px}
@@ -107,9 +104,10 @@ h2{font-family:'Baloo 2';font-size:21px;color:var(--tinta)}
 .estacion{border:none;background:none;cursor:pointer;font-family:'Nunito'}
 .est-circulo{
   width:92px;height:92px;margin:0 auto;border-radius:50%;position:relative;
-  display:flex;align-items:center;justify-content:center;font-size:36px;
+  display:flex;align-items:flex-end;justify-content:center;overflow:hidden;
   border:4px solid transparent;transition:transform .15s ease;
 }
+.est-circulo img{height:82px;margin-bottom:-4px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.15))}
 .estacion:active .est-circulo{transform:scale(.94)}
 .estacion[data-e="1"] .est-circulo{background:var(--verde-suave);border-color:var(--verde)}
 .estacion[data-e="2"] .est-circulo{background:var(--lila-suave);border-color:var(--lila)}
@@ -148,6 +146,8 @@ h2{font-family:'Baloo 2';font-size:21px;color:var(--tinta)}
 .cab-reto .volver{background:rgba(255,255,255,.2);border:none;color:#fff;width:40px;height:40px;border-radius:50%;font-size:20px;cursor:pointer;flex-shrink:0}
 .cab-reto h2{color:#fff;font-size:19px;line-height:1.1}
 .cab-reto span{font-size:12.5px;opacity:.85;font-weight:700}
+.cab-reto .anfitrion{margin-left:auto;flex-shrink:0;width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:flex-end;justify-content:center;overflow:hidden;border:2px solid rgba(255,255,255,.6)}
+.cab-reto .anfitrion img{height:46px;margin-bottom:-2px}
 .pasos-dots{display:flex;gap:7px;justify-content:center;margin-bottom:14px}
 .pasos-dots .dot{width:34px;height:8px;border-radius:999px;background:rgba(255,255,255,.3)}
 .pasos-dots .dot.activo{background:#fff}
@@ -209,6 +209,8 @@ h2{font-family:'Baloo 2';font-size:21px;color:var(--tinta)}
   padding:18px;text-align:center;color:#6B4FA8;font-weight:700;font-size:13.5px;
 }
 .video-ph .play{width:50px;height:50px;border-radius:50%;background:var(--lila);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px}
+.video-real{margin-top:6px;border-radius:18px;overflow:hidden;background:#000}
+.video-real video,.video-real iframe{display:block;width:100%;aspect-ratio:16/9;border:0}
 
 /* reciclaje */
 .item-residuo{text-align:center;background:var(--cielo-suave);border-radius:20px;padding:18px;margin-bottom:14px}
@@ -249,7 +251,7 @@ h2{font-family:'Baloo 2';font-size:21px;color:var(--tinta)}
 .pregunta{font-family:'Baloo 2';font-size:18.5px;line-height:1.25;margin-bottom:14px}
 .opciones{display:flex;flex-direction:column;gap:10px}
 .opcion{
-  border:2.5px solid #EBD9B4;background:#FFFDF7;border-radius:999px;padding:13px 18px;
+  border:2.5px solid #F3D8BC;background:#FFFBF6;border-radius:999px;padding:13px 18px;
   font-family:'Nunito';font-weight:800;font-size:15px;color:var(--tinta);cursor:pointer;text-align:left;
 }
 .opcion:active{transform:scale(.97)}
@@ -269,9 +271,11 @@ h2{font-family:'Baloo 2';font-size:21px;color:var(--tinta)}
 /* estación completada / reintento */
 .exito-est{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;padding:30px 0}
 .exito-est .medalla{
-  width:126px;height:126px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;
-  font-size:60px;box-shadow:0 12px 30px rgba(0,0,0,.25);margin-bottom:22px;animation:estampar .5s cubic-bezier(.2,1.6,.4,1);
+  width:130px;height:130px;border-radius:50%;background:#fff;display:flex;align-items:flex-end;justify-content:center;
+  overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,.25);margin-bottom:22px;animation:estampar .5s cubic-bezier(.2,1.6,.4,1);
 }
+.exito-est .medalla img{height:112px;margin-bottom:-4px}
+.exito-est .medalla.emoji{font-size:60px;align-items:center;overflow:visible}
 .exito-est h1{color:#fff;font-size:29px}
 .exito-est p{margin-top:8px;font-size:16px;opacity:.9;max-width:300px}
 
@@ -316,29 +320,21 @@ h2{font-family:'Baloo 2';font-size:21px;color:var(--tinta)}
   <section class="vista" id="v-splash">
     <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
       <div class="marca">
-        <div class="logo-vital">
-          <span class="c1">CONEXIÓN</span>
-          <span class="c2">VITAL</span>
-          <span class="c3">Postobón</span>
-        </div>
+        <img class="logo-cv" src="assets/logo-cv-blanco.png" alt="Conexión Vital · Postobón">
         <span class="logo-parque" id="chip-parque"></span>
       </div>
-      <div class="familia">
-        <div class="pers p1"><div class="cab"></div><div class="cue"></div></div>
-        <div class="pers p2"><div class="cab"></div><div class="cue"></div></div>
-        <div class="pers p3"><div class="cab"></div><div class="cue"></div></div>
-        <div class="pers p4"><div class="cab"></div><div class="cue"></div></div>
-      </div>
-      <p style="text-align:center;color:#fff;font-size:16.5px;font-weight:700;margin-top:6px">El bienestar se siente,<br>se vive y se decide.</p>
+      <img class="familia-img" src="assets/familia.png" alt="La Familia Vital">
+      <p style="text-align:center;color:#fff;font-size:16.5px;font-weight:700;margin-top:2px">El bienestar se siente,<br>se vive y se decide.</p>
     </div>
     <button class="btn" onclick="ir('v-registro')">Acepta el reto</button>
     <button class="enlace" onclick="ir('v-recuperar')">Ya me registré · continuar mi recorrido</button>
+    <div class="sello-fundacion"><span><img src="assets/logo-fundacion.png" alt="Fundación Postobón"></span></div>
   </section>
 
   <!-- ============ REGISTRO ============ -->
   <section class="vista" id="v-registro">
     <div class="marca" style="margin-bottom:16px">
-      <div class="logo-vital"><span class="c2" style="font-size:30px">VITAL</span></div>
+      <img class="logo-cv mini" src="assets/logo-cv-blanco.png" alt="Conexión Vital">
     </div>
     <div class="tarjeta">
       <h1>Inscríbete y arranca</h1>
@@ -353,12 +349,15 @@ h2{font-family:'Baloo 2';font-size:21px;color:var(--tinta)}
         <select id="f-tipodoc"><option value="">Selecciona…</option><option value="CC">Cédula de ciudadanía</option><option value="TI">Tarjeta de identidad</option><option value="CE">Cédula de extranjería</option><option value="PP">Pasaporte</option></select>
       </div>
       <div class="campo" id="c-doc"><label>Número de documento</label><input id="f-doc" type="tel" inputmode="numeric" placeholder="Sin puntos ni espacios"></div>
+      <div class="campo" id="c-parque"><label>¿En qué parque o club estás jugando?</label>
+        <select id="f-parque"><option value="">Selecciona…</option></select>
+      </div>
       <div class="checks">
         <label class="check"><input type="checkbox" id="f-datos"><span>Acepto la <a href="#" onclick="return false">Política de Tratamiento de Datos Personales</a> de Fundación Postobón (Ley 1581 de 2012).</span></label>
         <label class="check"><input type="checkbox" id="f-tyc"><span>Acepto los <a href="#" onclick="return false">Términos y Condiciones</a> del premio.</span></label>
       </div>
       <div class="aviso-error" id="err-registro"></div>
-      <button class="btn primario" style="margin-top:18px" onclick="registrar()">Registrarme</button>
+      <button class="btn primario" style="margin-top:18px" id="btn-registrar" onclick="registrar()">Registrarme</button>
     </div>
     <button class="enlace" onclick="ir('v-recuperar')">Ya tengo registro · continuar</button>
   </section>
@@ -371,7 +370,7 @@ h2{font-family:'Baloo 2';font-size:21px;color:var(--tinta)}
         <p class="sub">Ingresa el número de documento con el que te registraste y retomamos donde ibas.</p>
         <div class="campo"><label>Número de documento</label><input id="f-doc-rec" type="tel" inputmode="numeric" placeholder="Sin puntos ni espacios"></div>
         <div class="aviso-error" id="err-recuperar"></div>
-        <button class="btn primario" style="margin-top:18px" onclick="recuperar()">Continuar</button>
+        <button class="btn primario" style="margin-top:18px" id="btn-recuperar" onclick="recuperar()">Continuar</button>
       </div>
       <button class="enlace" onclick="ir('v-splash')">Volver</button>
     </div>
@@ -380,7 +379,7 @@ h2{font-family:'Baloo 2';font-size:21px;color:var(--tinta)}
   <!-- ============ INSTRUCCIONES ============ -->
   <section class="vista" id="v-instrucciones">
     <div class="marca" style="margin-bottom:14px">
-      <div class="logo-vital"><span class="c2" style="font-size:30px">VITAL</span></div>
+      <img class="logo-cv mini" src="assets/logo-cv-blanco.png" alt="Conexión Vital">
     </div>
     <div class="tarjeta">
       <h1>¡Acepta el reto de tu bienestar!</h1>
@@ -435,6 +434,7 @@ h2{font-family:'Baloo 2';font-size:21px;color:var(--tinta)}
     <div class="cab-reto">
       <button class="volver" onclick="salirReto()">‹</button>
       <div><h2 id="reto-titulo"></h2><span id="reto-sub"></span></div>
+      <div class="anfitrion"><img id="reto-anfitrion" src="" alt=""></div>
     </div>
     <div class="pasos-dots" id="pasos-dots"></div>
     <div class="paso-titulo" id="paso-titulo"></div>
@@ -444,7 +444,7 @@ h2{font-family:'Baloo 2';font-size:21px;color:var(--tinta)}
   <!-- ============ ESTACIÓN COMPLETADA ============ -->
   <section class="vista" id="v-exito-est">
     <div class="exito-est">
-      <div class="medalla" id="exito-emoji">✅</div>
+      <div class="medalla" id="exito-medalla"><img id="exito-img" src="" alt=""></div>
       <h1 id="exito-titulo">¡Estación completada!</h1>
       <p id="exito-msg"></p>
       <button class="btn" style="margin-top:26px;max-width:280px" onclick="ir('v-pasaporte')">Ver mi Pasaporte Vital</button>
@@ -454,7 +454,7 @@ h2{font-family:'Baloo 2';font-size:21px;color:var(--tinta)}
   <!-- ============ REINTENTO ============ -->
   <section class="vista" id="v-reintento">
     <div class="exito-est">
-      <div class="medalla">💪</div>
+      <div class="medalla emoji">💪</div>
       <h1>¡Casi lo logras!</h1>
       <p id="reintento-msg"></p>
       <button class="btn" style="margin-top:26px;max-width:280px" id="btn-reintentar">Intentar de nuevo</button>
@@ -471,14 +471,21 @@ h2{font-family:'Baloo 2';font-size:21px;color:var(--tinta)}
         <small>Tu código de premio</small>
         <div class="codigo" id="codigo-final"></div>
       </div>
-      <button class="btn" style="margin-top:26px;max-width:280px" onclick="copiarCodigo(this)">Copiar código</button>
+      <p id="codigo-vigencia" style="color:#fff;opacity:.85;font-size:13.5px;font-weight:700;margin-top:12px"></p>
+      <button class="btn" style="margin-top:16px;max-width:280px" onclick="copiarCodigo(this)">Copiar código</button>
+      <button class="btn fantasma" style="margin-top:12px;max-width:280px" onclick="jugarOtraVez()">Jugar otra vez 🔄</button>
+      <div class="sello-fundacion"><span><img src="assets/logo-fundacion.png" alt="Fundación Postobón"></span></div>
     </div>
   </section>
 </div>
 
 <script>
 /* =====================================================================
-   CONFIGURACIÓN — en producción: /config/{parque}.json
+   CONFIGURACIÓN
+   - parque y estación llegan por URL: ?parque=comfama&estacion=2
+   - config/{parque}.json puede sobreescribir nombre, colores y logo
+   - SHEET_API: URL del Web App de Google Apps Script (el backend sobre
+     Google Sheets). Si está vacío, la app funciona en modo local.
    ===================================================================== */
 const CONFIG = {
   parque: (new URLSearchParams(location.search).get('parque') || 'comfama'),
@@ -488,18 +495,29 @@ const CONFIG = {
     colsubsidio: { nombre:'COLSUBSIDIO' },
     arvi:        { nombre:'PARQUE ARVÍ' }
   },
-  DEMO_MODE: true // producción: false
+  /* >>> BACKEND: URL del Web App de Google Apps Script (backend/apps-script-backend.gs).
+     Vacío = modo local (localStorage, ideal para demo). <<< */
+  SHEET_API: "",
+  /* Máximo de códigos por cédula por mes (regla WeShop) */
+  MAX_CODIGOS_MES: 2,
+  /* Meses de vigencia de cada código para redimir */
+  MESES_VIGENCIA: 2,
+  /* Video "Activa tu bienestar" (estación Conexión). Acepta .mp4 o URL de YouTube embed.
+     Vacío = se muestra el placeholder. */
+  VIDEO_BIENESTAR: "",
+  DEMO_MODE: true // producción: false (oculta los botones de simulación de QR)
 };
 
-/* Códigos placeholder — en producción los asigna el backend desde la base cargada */
-const CODIGOS = ['VITAL-7K2M9','VITAL-3XQ81','VITAL-9RT44','VITAL-5PL27','VITAL-8WN63',
-                 'VITAL-2HJ95','VITAL-6BC18','VITAL-4DF72','VITAL-1GK56','VITAL-0SM39'];
+/* Códigos de respaldo para MODO LOCAL (sin backend). En producción los
+   asigna el Sheet desde la base mensual que se carga en la pestaña "codigos". */
+const CODIGOS_LOCAL = ['VITAL-7K2M9','VITAL-3XQ81','VITAL-9RT44','VITAL-5PL27','VITAL-8WN63',
+                       'VITAL-2HJ95','VITAL-6BC18','VITAL-4DF72','VITAL-1GK56','VITAL-0SM39'];
 
 const ESTACIONES = [
-  { id:1, nombre:'Movimiento',  emoji:'🏃' },
-  { id:2, nombre:'Conexión',    emoji:'🧘' },
-  { id:3, nombre:'Bienestar',   emoji:'♻️' },
-  { id:4, nombre:'Interacción', emoji:'🧠' }
+  { id:1, nombre:'Movimiento',  emoji:'🏃', img:'assets/nina.png',     anfitrion:'La hija Vital' },
+  { id:2, nombre:'Conexión',    emoji:'🧘', img:'assets/mama.png',     anfitrion:'La mamá Vital' },
+  { id:3, nombre:'Bienestar',   emoji:'♻️', img:'assets/papa.png',     anfitrion:'El papá Vital' },
+  { id:4, nombre:'Interacción', emoji:'🧠', img:'assets/muchacho.png', anfitrion:'El hijo Vital' }
 ];
 
 /* =====================================================================
@@ -507,17 +525,146 @@ const ESTACIONES = [
    ===================================================================== */
 const KEY = 'cv_' + CONFIG.parque;
 let estado = JSON.parse(localStorage.getItem(KEY) || 'null') || {
-  usuario:null, progreso:{1:false,2:false,3:false,4:false}, codigo:null
+  usuario:null, progreso:{1:false,2:false,3:false,4:false},
+  vuelta:1, codigo:null, codigos:[]
 };
+if(!estado.vuelta) estado.vuelta = 1;
+if(!estado.codigos) estado.codigos = [];
 function guardar(){ localStorage.setItem(KEY, JSON.stringify(estado)); }
 
 /* timers activos — se limpian al cambiar de paso o de vista */
 let timers = [];
-/* variables del escáner (declaradas aquí para estar listas desde el arranque) */
 let streamCam = null, scanLoop = null;
 function T(fn,ms){ const t=setTimeout(fn,ms); timers.push(t); return t; }
 function I(fn,ms){ const t=setInterval(fn,ms); timers.push(t); return t; }
 function limpiarTimers(){ timers.forEach(t=>{clearTimeout(t);clearInterval(t);}); timers=[]; }
+
+/* =====================================================================
+   VARIEDAD DE CONTENIDO
+   Cada participante ve una versión distinta de los retos: el contenido
+   se elige de un banco de opciones usando su documento + número de
+   recorrido (vuelta) como semilla. Dos personas en la misma estación
+   viven retos diferentes, y quien vuelve a jugar encuentra actividades
+   nuevas. Si alguien reintenta un paso, su reto no cambia (no se puede
+   "barajar" para conseguir uno más fácil).
+   ===================================================================== */
+function semilla(txt){
+  let h = 2166136261;
+  for(let i=0;i<txt.length;i++){ h ^= txt.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function rng(seed){
+  let s = seed >>> 0;
+  return function(){
+    s |= 0; s = s + 0x6D2B79F5 | 0;
+    let t = Math.imul(s ^ s >>> 15, 1 | s);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function claveUsuario(){ return (estado.usuario?.doc || 'anon') + '|' + CONFIG.parque + '|v' + (estado.vuelta || 1); }
+/* elige 1 elemento del banco, estable por participante */
+function variante(banco, salt){
+  const r = rng(semilla(claveUsuario() + '|' + salt));
+  return banco[Math.floor(r() * banco.length)];
+}
+/* elige n elementos distintos del banco, en orden barajado estable */
+function elegir(banco, n, salt){
+  const r = rng(semilla(claveUsuario() + '|' + salt));
+  const copia = banco.slice();
+  for(let i=copia.length-1;i>0;i--){
+    const j = Math.floor(r() * (i+1));
+    [copia[i],copia[j]] = [copia[j],copia[i]];
+  }
+  return copia.slice(0, n);
+}
+
+/* =====================================================================
+   BACKEND · Google Sheets vía Apps Script (backend/apps-script-backend.gs)
+   Un solo Google Sheet con pestañas: parques, participantes, estaciones,
+   codigos (base mensual de WeShop) e intenciones.
+   Si CONFIG.SHEET_API está vacío, todo corre en modo local.
+   ===================================================================== */
+const Backend = {
+  activo: !!CONFIG.SHEET_API,
+
+  get(params){
+    if(!this.activo) return Promise.resolve(undefined); // undefined = backend apagado
+    const u = CONFIG.SHEET_API + '?' + new URLSearchParams(params).toString();
+    return fetch(u).then(r=>r.json());
+  },
+
+  post(tipo, datos, esperarRespuesta){
+    if(!this.activo) return Promise.resolve(undefined);
+    const cuerpo = JSON.stringify({ tipo, parque:CONFIG.parque, fecha:new Date().toISOString(), ...datos });
+    const p = fetch(CONFIG.SHEET_API, {
+      method:'POST',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+      body: cuerpo
+    });
+    if(!esperarRespuesta){ p.catch(()=>{}); return Promise.resolve(undefined); }
+    return p.then(r=>r.json());
+  },
+
+  /* lista de parques/clubes activos desde la pestaña "parques" */
+  parques(){
+    return this.get({ accion:'parques' })
+      .then(r => (r && r.parques) ? r.parques : undefined)
+      .catch(()=>undefined);
+  },
+
+  /* crea o actualiza al participante (registro, progreso, vuelta) */
+  guardarUsuario(){
+    if(!this.activo || !estado.usuario) return;
+    this.post('registro', {
+      ...estado.usuario,
+      vuelta: estado.vuelta,
+      progreso: estado.progreso
+    });
+  },
+
+  /* busca el registro por documento; devuelve estado remoto, null o undefined */
+  buscarUsuario(doc){
+    if(!this.activo) return Promise.resolve(undefined);
+    return this.get({ accion:'progreso', doc:doc, parque:CONFIG.parque })
+      .then(r => (r && r.existe) ? r : null);
+  },
+
+  reportarEstacion(n){
+    this.post('estacion', { doc:estado.usuario.doc, estacion:n, vuelta:estado.vuelta,
+                            parque_juego: estado.usuario.parqueJuego || CONFIG.parque });
+  },
+
+  reportarIntencion(txt){
+    this.post('intencion', { doc:estado.usuario?.doc, intencion:txt, vuelta:estado.vuelta });
+  },
+
+  reportarReinicio(){
+    this.post('reinicio', { doc:estado.usuario.doc, vuelta:estado.vuelta });
+  },
+
+  /* pide un código único de la base mensual de WeShop.
+     Respuestas: {codigo, valido_hasta} · {error:'limite_mes'} · {error:'agotados'} */
+  asignarCodigo(){
+    if(!this.activo) return Promise.resolve(undefined);
+    return this.post('codigo', {
+      doc: estado.usuario.doc,
+      vuelta: estado.vuelta,
+      parque_juego: estado.usuario.parqueJuego || CONFIG.parque
+    }, true);
+  }
+};
+
+/* ---- reglas de redención en MODO LOCAL (sin backend) ---- */
+function mesActual(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function codigosEsteMes(){
+  return (estado.codigos||[]).filter(c => (c.fecha||'').slice(0,7) === mesActual()).length;
+}
+function fechaVigencia(desde){
+  const d = desde ? new Date(desde) : new Date();
+  d.setMonth(d.getMonth() + CONFIG.MESES_VIGENCIA);
+  return d.toLocaleDateString('es-CO', { day:'numeric', month:'long', year:'numeric' });
+}
 
 /* =====================================================================
    NAVEGACIÓN
@@ -536,11 +683,28 @@ function ir(id){
    ARRANQUE
    ===================================================================== */
 let estacionPendiente = null;
+function pintarParques(lista){
+  const sel = document.getElementById('f-parque');
+  sel.innerHTML = '<option value="">Selecciona…</option>';
+  lista.forEach(p=>{
+    const o = document.createElement('option');
+    o.value = p.id; o.textContent = p.nombre;
+    sel.appendChild(o);
+  });
+  /* preselecciona el parque del QR si está en la lista */
+  if(lista.some(p=>p.id===CONFIG.parque)) sel.value = CONFIG.parque;
+  const enLista = lista.find(p=>p.id===CONFIG.parque);
+  if(enLista) document.getElementById('chip-parque').textContent = enLista.nombre;
+}
 (function init(){
-  const p = CONFIG.parques[CONFIG.parque] || CONFIG.parques.comfama;
-  document.getElementById('chip-parque').textContent = p.nombre;
-  /* Config externa por parque: config/{parque}.json puede sobreescribir nombre y colores
-     sin tocar el código. Si no existe o no carga, la app sigue con los valores embebidos. */
+  const p = CONFIG.parques[CONFIG.parque];
+  document.getElementById('chip-parque').textContent = p ? p.nombre : CONFIG.parque.toUpperCase();
+  /* desplegable de parques: arranca con los embebidos y se actualiza
+     desde la pestaña "parques" del Google Sheet (parques nuevos aparecen solos) */
+  pintarParques(Object.entries(CONFIG.parques).map(([id,v])=>({id, nombre:v.nombre})));
+  Backend.parques().then(lista=>{ if(lista && lista.length) pintarParques(lista); });
+  /* Config externa por parque: config/{parque}.json puede sobreescribir
+     nombre, colores y logo del parque sin tocar el código. */
   fetch('config/'+CONFIG.parque+'.json')
     .then(r=>r.ok ? r.json() : null)
     .then(cfg=>{
@@ -548,6 +712,10 @@ let estacionPendiente = null;
       if(cfg.nombre) document.getElementById('chip-parque').textContent = cfg.nombre;
       if(cfg.colores) Object.entries(cfg.colores).forEach(([k,v])=>
         document.documentElement.style.setProperty('--'+k, v));
+      if(cfg.logo){
+        const chip = document.getElementById('chip-parque');
+        chip.innerHTML = '<img src="'+cfg.logo+'" alt="'+(cfg.nombre||'')+'" style="height:26px;display:block">';
+      }
     }).catch(()=>{});
   if(!CONFIG.DEMO_MODE) document.getElementById('demo-banda').classList.add('oculto');
 
@@ -570,7 +738,8 @@ function registrar(){
     genero:  document.getElementById('f-genero').value,
     nac:     document.getElementById('f-nac').value,
     tipodoc: document.getElementById('f-tipodoc').value,
-    doc:     document.getElementById('f-doc').value.trim().replace(/\D/g,'')
+    doc:     document.getElementById('f-doc').value.trim().replace(/\D/g,''),
+    parqueJuego: document.getElementById('f-parque').value
   };
   const err = document.getElementById('err-registro');
   document.querySelectorAll('#v-registro .campo').forEach(c=>c.classList.remove('error'));
@@ -581,6 +750,7 @@ function registrar(){
   else if(!f.nac){ falla='c-nac'; err.textContent='Ingresa tu fecha de nacimiento.'; }
   else if(!f.tipodoc){ falla='c-tipodoc'; err.textContent='Selecciona el tipo de documento.'; }
   else if(f.doc.length<5){ falla='c-doc'; err.textContent='Revisa tu número de documento.'; }
+  else if(!f.parqueJuego){ falla='c-parque'; err.textContent='Cuéntanos en qué parque o club estás jugando.'; }
   else if(!document.getElementById('f-datos').checked || !document.getElementById('f-tyc').checked){
     err.textContent='Debes aceptar la política de datos y los términos y condiciones.';
     err.classList.add('visible'); return;
@@ -588,24 +758,81 @@ function registrar(){
   if(falla){ document.getElementById(falla).classList.add('error'); err.classList.add('visible'); return; }
   err.classList.remove('visible');
 
-  estado.usuario = { ...f, parque:CONFIG.parque, registro:new Date().toISOString() };
-  guardar();
-  // >>> INTEGRACIÓN BACKEND: enviar registro a Firebase/Sheet <<<
-  if(estacionPendiente){ const e=estacionPendiente; estacionPendiente=null; abrirEstacion(e); }
-  else ir('v-instrucciones');
+  const btn = document.getElementById('btn-registrar');
+  const continuar = ()=>{
+    guardar();
+    Backend.guardarUsuario();
+    btn.classList.remove('cargando');
+    if(estacionPendiente){ const e=estacionPendiente; estacionPendiente=null; abrirEstacion(e); }
+    else ir('v-instrucciones');
+  };
+
+  btn.classList.add('cargando');
+  /* si hay backend, primero revisa si ese documento ya existe para retomar su progreso */
+  Backend.buscarUsuario(f.doc).then(remoto=>{
+    if(remoto){
+      aplicarRemoto(remoto);
+      estado.usuario.parqueJuego = f.parqueJuego; /* hoy juega aquí */
+    } else {
+      estado.usuario = { ...f, parque:CONFIG.parque, registro:new Date().toISOString() };
+      estado.vuelta = 1;
+    }
+    continuar();
+  }).catch(()=>{
+    estado.usuario = { ...f, parque:CONFIG.parque, registro:new Date().toISOString() };
+    estado.vuelta = 1;
+    continuar();
+  });
+}
+
+/* aplica al estado local lo que dice el Sheet de este participante */
+function aplicarRemoto(r){
+  const u = r.usuario || r;
+  estado.usuario  = { nombre:u.nombre, correo:u.correo, genero:u.genero,
+                      nac:u.nac, tipodoc:u.tipodoc, doc:u.doc,
+                      parque:u.parque || CONFIG.parque,
+                      parqueJuego:u.parqueJuego || '',
+                      registro:u.registro };
+  estado.vuelta   = r.vuelta || 1;
+  estado.progreso = r.progreso || {1:false,2:false,3:false,4:false};
+  estado.codigo   = r.codigo || null;
+  estado.codigoVigencia = r.valido_hasta || null;
+  estado.codigos  = r.codigos || estado.codigos || [];
 }
 
 function recuperar(){
   const doc = document.getElementById('f-doc-rec').value.trim().replace(/\D/g,'');
   const err = document.getElementById('err-recuperar');
-  // >>> INTEGRACIÓN BACKEND: consultar progreso por documento en Firebase <<<
-  if(estado.usuario && estado.usuario.doc === doc){
-    err.classList.remove('visible');
-    ir('v-pasaporte');
-  } else {
-    err.textContent = 'No encontramos un registro con ese documento en este dispositivo. (En producción esta búsqueda se hace en la base de datos central.)';
-    err.classList.add('visible');
+  const btn = document.getElementById('btn-recuperar');
+  if(doc.length<5){
+    err.textContent = 'Revisa tu número de documento.';
+    err.classList.add('visible'); return;
   }
+  btn.classList.add('cargando');
+  Backend.buscarUsuario(doc).then(remoto=>{
+    btn.classList.remove('cargando');
+    if(remoto){
+      aplicarRemoto(remoto);
+      guardar();
+      err.classList.remove('visible');
+      ir('v-pasaporte');
+      return;
+    }
+    /* backend apagado (undefined) o sin registro (null): intenta en este dispositivo */
+    if(estado.usuario && estado.usuario.doc === doc){
+      err.classList.remove('visible');
+      ir('v-pasaporte');
+    } else {
+      err.textContent = remoto === null
+        ? 'No encontramos un registro con ese documento. Verifica el número o regístrate.'
+        : 'No encontramos un registro con ese documento en este dispositivo.';
+      err.classList.add('visible');
+    }
+  }).catch(()=>{
+    btn.classList.remove('cargando');
+    err.textContent = 'No pudimos consultar tu registro. Revisa tu conexión e intenta de nuevo.';
+    err.classList.add('visible');
+  });
 }
 
 /* =====================================================================
@@ -622,7 +849,7 @@ function pintarPasaporte(){
     const b = document.createElement('button');
     b.className = 'estacion' + (done?' completa':'');
     b.dataset.e = e.id;
-    b.innerHTML = `<div class="est-circulo">${e.emoji}<div class="sello">✓</div></div>
+    b.innerHTML = `<div class="est-circulo"><img src="${e.img}" alt="${e.anfitrion}"><div class="sello">✓</div></div>
                    <span class="est-nombre">${e.nombre}</span>
                    <span class="est-estado">${done?'Completada':'Pendiente'}</span>`;
     b.onclick = ()=>{ if(!done) ir('v-scan'); };
@@ -745,10 +972,13 @@ function abrirEstacion(n){
   if(estado.progreso[n]){ ir('v-pasaporte'); return; }
   estActual = n; pasoActual = 0;
   const r = RETOS[n];
+  const e = ESTACIONES.find(x=>x.id===n);
   const vista = document.getElementById('v-reto');
   vista.className = 'vista ' + r.tema;
   document.getElementById('reto-titulo').textContent = r.titulo;
   document.getElementById('reto-sub').textContent = r.sub;
+  const anf = document.getElementById('reto-anfitrion');
+  anf.src = e.img; anf.alt = e.anfitrion;
   montarPaso();
   limpiarTimers();
   document.querySelectorAll('.vista').forEach(v=>v.classList.remove('activa'));
@@ -800,9 +1030,11 @@ function salirReto(){ limpiarTimers(); ir('v-pasaporte'); }
 function completarEstacion(n){
   estado.progreso[n] = true;
   guardar();
-  // >>> INTEGRACIÓN BACKEND: reportar estación completada <<<
+  Backend.guardarUsuario();
+  Backend.reportarEstacion(n);
   const e = ESTACIONES.find(x=>x.id===n);
-  document.getElementById('exito-emoji').textContent = e.emoji;
+  const img = document.getElementById('exito-img');
+  img.src = e.img; img.alt = e.anfitrion;
   document.getElementById('exito-titulo').textContent = '¡'+e.nombre+' completada!';
   const faltan = 4 - Object.values(estado.progreso).filter(Boolean).length;
   document.getElementById('exito-msg').textContent = faltan>0
@@ -812,11 +1044,25 @@ function completarEstacion(n){
 }
 
 /* =====================================================================
-   E1 · MOVIMIENTO
+   E1 · MOVIMIENTO — la hija Vital
    ===================================================================== */
 const RETOS_FISICOS = [
   '10 sentadillas 🔥','15 saltos de tijera ⚡','20 segundos de plancha 🧱',
   'Trota en el puesto ¡a tope! 🏃','10 estiramientos de brazos 🙆','Baila como quieras 💃'
+];
+const EQUILIBRIOS = [
+  { texto:'Párate en tu pie <b>derecho</b>, brazos abiertos, y aguanta', seg:20, emoji:'🦩' },
+  { texto:'Párate en tu pie <b>izquierdo</b>, brazos abiertos, y aguanta', seg:20, emoji:'🦩' },
+  { texto:'Párate en un pie con los <b>brazos arriba</b> y aguanta', seg:15, emoji:'🙌' },
+  { texto:'Ponte <b>en puntas de pies</b>, sin moverte, y aguanta', seg:20, emoji:'🩰' },
+  { texto:'Párate en un pie y <b>cierra un ojo</b>. Aguanta', seg:12, emoji:'😉' }
+];
+const PREGUNTAS_MOV = [
+  { p:'¿Cuántos minutos de actividad física al día recomienda la OMS para adultos?', ops:['5 minutos','Al menos 30 minutos','Solo el fin de semana','No es necesario'], ok:1 },
+  { p:'Antes de hacer ejercicio fuerte, lo mejor es…', ops:['Empezar de una','Calentar unos minutos','Aguantar la respiración','Comer bastante'], ok:1 },
+  { p:'Caminar rápido todos los días fortalece sobre todo…', ops:['Solo la memoria','El corazón y las piernas','Únicamente los brazos','Nada en especial'], ok:1 },
+  { p:'Subir por las escaleras en vez del ascensor es…', ops:['Peligroso siempre','Una forma fácil de sumar movimiento','Solo para deportistas','Una pérdida de tiempo'], ok:1 },
+  { p:'¿Cuál es un beneficio de moverte todos los días?', ops:['Más energía y mejor ánimo','Más sueño en el día','Menos apetito siempre','Ninguno'], ok:0 }
 ];
 function pasoDado(panel){
   panel.innerHTML = `
@@ -858,11 +1104,12 @@ function pasoDado(panel){
   };
 }
 function pasoEquilibrio(panel){
+  const eq = variante(EQUILIBRIOS, 'e1-equilibrio');
   panel.innerHTML = `
     <div class="centro">
-      <p class="sub" style="margin:0"><b>Reto de equilibrio:</b> párate en un solo pie,<br>brazos abiertos, y aguanta 20 segundos.<br>¿Fácil? Cierra un ojo 😉</p>
-      <div style="font-size:64px;margin:18px 0">🦩</div>
-      <div class="crono oculto" id="crono-eq">0:20</div>
+      <p class="sub" style="margin:0"><b>Reto de equilibrio:</b><br>${eq.texto} <b>${eq.seg} segundos</b>.</p>
+      <div style="font-size:64px;margin:18px 0">${eq.emoji}</div>
+      <div class="crono oculto" id="crono-eq">0:${String(eq.seg).padStart(2,'0')}</div>
       <button class="btn primario" id="btn-eq">¡Estoy en posición!</button>
       <button class="btn mini oculto" id="btn-eq-listo" style="margin-top:12px;background:var(--verde);color:#fff">¡Aguanté! 💪</button>
     </div>`;
@@ -871,7 +1118,7 @@ function pasoEquilibrio(panel){
     this.classList.add('oculto');
     const el = panel.querySelector('#crono-eq');
     el.classList.remove('oculto');
-    let t = 20;
+    let t = eq.seg;
     I(()=>{
       t--;
       if(t<0){ limpiarTimers(); el.textContent='¡Tiempo!'; panel.querySelector('#btn-eq-listo').classList.remove('oculto'); }
@@ -880,7 +1127,7 @@ function pasoEquilibrio(panel){
   };
 }
 function pasoPreguntaMov(panel){
-  const q = { p:'¿Cuántos minutos de actividad física al día recomienda la OMS para adultos?', ops:['5 minutos','Al menos 30 minutos','Solo el fin de semana','No es necesario'], ok:1 };
+  const q = variante(PREGUNTAS_MOV, 'e1-pregunta');
   panel.innerHTML = `
     <div class="pregunta">${q.p}</div>
     <div class="opciones" id="ops"></div>
@@ -906,12 +1153,34 @@ function pasoPreguntaMov(panel){
 }
 
 /* =====================================================================
-   E2 · CONEXIÓN
+   E2 · CONEXIÓN — la mamá Vital
    ===================================================================== */
+const RESPIRACIONES = [
+  { nombre:'Respiración profunda', inhala:4, sosten:2, exhala:4, ciclos:3,
+    desc:'Sigue el círculo y completa <b>3 respiraciones profundas</b>.' },
+  { nombre:'Respiración cuadrada', inhala:4, sosten:4, exhala:4, ciclos:3,
+    desc:'Inhala, sostén y exhala en tiempos iguales. <b>3 ciclos</b>, como un cuadrado.' },
+  { nombre:'Respiración calmante', inhala:4, sosten:2, exhala:6, ciclos:3,
+    desc:'Exhala más largo de lo que inhalas: es el botón de calma del cuerpo. <b>3 ciclos</b>.' },
+  { nombre:'Respiración energizante', inhala:3, sosten:1, exhala:3, ciclos:4,
+    desc:'Ritmo corto y constante para despertar el cuerpo. <b>4 ciclos</b>.' },
+  { nombre:'Respiración serena', inhala:5, sosten:2, exhala:5, ciclos:3,
+    desc:'Lenta y amplia, como las olas. <b>3 respiraciones bien profundas</b>.' }
+];
+const PARES_CONC = [
+  ['🌿','🍀'], ['💧','💦'], ['🌙','⭐'], ['🍎','🍅'],
+  ['🌻','🌼'], ['🍊','🍋'], ['🌲','🌴'], ['⚽','🏀']
+];
+const INTENCIONES = [
+  'Moverme más 🏃','Respirar con calma 🌬️','Compartir en familia 💙','Tomar más agua 💧',
+  'Dormir mejor 😴','Comer más frutas 🍎','Caminar al aire libre 🌳','Agradecer algo hoy ✨',
+  'Menos pantalla, más presencia 📵','Reír más 😄'
+];
 function pasoRespiracion(panel){
+  const R = variante(RESPIRACIONES, 'e2-respiracion');
   panel.innerHTML = `
     <div class="centro" style="flex:1;display:flex;flex-direction:column;justify-content:center">
-      <p class="sub" style="margin:0">Bajemos las revoluciones. Sigue el círculo<br>y completa <b>3 respiraciones profundas</b>.</p>
+      <p class="sub" style="margin:0">Bajemos las revoluciones.<br><b>${R.nombre}:</b> ${R.desc}</p>
       <div class="circulo-resp" id="circ">Toca para<br>empezar</div>
       <div class="mini-eti" id="ciclos">&nbsp;</div>
       <button class="btn mini oculto" id="btn-resp" style="margin-top:16px;background:var(--lila);color:#fff">Continuar 💜</button>
@@ -924,35 +1193,30 @@ function pasoRespiracion(panel){
     if(activo) return;
     activo = true;
     let ciclo = 1;
-    const TOTAL = 3;
     function fase(){
-      ciclosEl.textContent = 'Respiración '+ciclo+' de '+TOTAL;
+      ciclosEl.textContent = 'Respiración '+ciclo+' de '+R.ciclos;
       c.innerHTML = 'Inhala…'; c.classList.add('grande'); c.classList.remove('chico');
       T(()=>{
         c.innerHTML = 'Sostén…';
         T(()=>{
           c.innerHTML = 'Exhala…'; c.classList.remove('grande'); c.classList.add('chico');
           T(()=>{
-            if(ciclo < TOTAL){ ciclo++; fase(); }
+            if(ciclo < R.ciclos){ ciclo++; fase(); }
             else {
               c.classList.remove('chico');
               c.innerHTML = '¡Muy bien! 💜';
               ciclosEl.textContent = 'Pausa completada';
               panel.querySelector('#btn-resp').classList.remove('oculto');
             }
-          }, 4000);
-        }, 2000);
-      }, 4000);
+          }, R.exhala*1000);
+        }, R.sosten*1000);
+      }, R.inhala*1000);
     }
     fase();
   };
 }
 function pasoConcentracion(panel){
-  const RONDAS = [
-    { base:'🌿', dif:'🍀' },
-    { base:'💧', dif:'💦' },
-    { base:'🌙', dif:'⭐' }
-  ];
+  const RONDAS = elegir(PARES_CONC, 3, 'e2-concentracion').map(par=>({ base:par[0], dif:par[1] }));
   let ronda = 0;
   panel.innerHTML = `
     <div class="centro">
@@ -975,7 +1239,7 @@ function pasoConcentracion(panel){
         if(i===difIdx){
           fb.textContent='¡Bien visto! ✅'; fb.className='feedback ok';
           T(()=>{
-            fb.textContent=''; 
+            fb.textContent='';
             ronda++;
             if(ronda<3) pintar(); else pasoSuperado();
           }, 700);
@@ -991,17 +1255,19 @@ function pasoConcentracion(panel){
   pintar();
 }
 function pasoIntencion(panel){
+  const video = CONFIG.VIDEO_BIENESTAR
+    ? (CONFIG.VIDEO_BIENESTAR.includes('youtube.com') || CONFIG.VIDEO_BIENESTAR.includes('youtu.be')
+        ? `<div class="video-real"><iframe src="${CONFIG.VIDEO_BIENESTAR}" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>`
+        : `<div class="video-real"><video src="${CONFIG.VIDEO_BIENESTAR}" controls playsinline></video></div>`)
+    : `<div class="video-ph"><div class="play">▶</div>Aquí irá el video "Activa tu bienestar"<br>(contenido final por producir)</div>`;
   panel.innerHTML = `
     <div class="centro">
-      <div class="video-ph">
-        <div class="play">▶</div>
-        Aquí irá el video "Activa tu bienestar"<br>(contenido final por producir)
-      </div>
+      ${video}
       <p class="sub" style="margin-top:16px"><b>Llévate un mensaje:</b> elige tu intención para el resto del día.</p>
       <div class="chips" id="chips"></div>
       <button class="btn mini" id="btn-int" disabled style="background:var(--lila);color:#fff">Guardar mi intención 💜</button>
     </div>`;
-  const OPCIONES = ['Moverme más 🏃','Respirar con calma 🌬️','Compartir en familia 💙','Tomar más agua 💧'];
+  const OPCIONES = elegir(INTENCIONES, 4, 'e2-intencion');
   const chipsEl = panel.querySelector('#chips');
   const btn = panel.querySelector('#btn-int');
   OPCIONES.forEach(txt=>{
@@ -1014,21 +1280,51 @@ function pasoIntencion(panel){
     };
     chipsEl.appendChild(c);
   });
-  btn.onclick = pasoSuperado;
+  btn.onclick = ()=>{
+    const sel = chipsEl.querySelector('.chip.sel');
+    if(sel) Backend.reportarIntencion(sel.textContent);
+    pasoSuperado();
+  };
 }
 
 /* =====================================================================
-   E3 · BIENESTAR
+   E3 · BIENESTAR — el papá Vital
+   Canecas según normativa colombiana:
+   blanca = aprovechables · negra = no aprovechables · verde = orgánicos
    ===================================================================== */
-const RESIDUOS = [
+const BANCO_RESIDUOS = [
   { emoji:'🍾', nombre:'Botella plástica', caneca:'blanca' },
-  { emoji:'🍌', nombre:'Cáscara de banano', caneca:'verde' },
   { emoji:'📦', nombre:'Caja de cartón limpia', caneca:'blanca' },
-  { emoji:'🧻', nombre:'Servilleta usada', caneca:'negra' },
+  { emoji:'🥫', nombre:'Lata de gaseosa', caneca:'blanca' },
+  { emoji:'🫙', nombre:'Frasco de vidrio', caneca:'blanca' },
+  { emoji:'📰', nombre:'Periódico viejo', caneca:'blanca' },
+  { emoji:'🍌', nombre:'Cáscara de banano', caneca:'verde' },
   { emoji:'🍎', nombre:'Restos de fruta', caneca:'verde' },
-  { emoji:'🥤', nombre:'Vaso desechable sucio', caneca:'negra' }
+  { emoji:'🥚', nombre:'Cáscaras de huevo', caneca:'verde' },
+  { emoji:'☕', nombre:'Borra de café', caneca:'verde' },
+  { emoji:'🍂', nombre:'Hojas secas del jardín', caneca:'verde' },
+  { emoji:'🧻', nombre:'Servilleta usada', caneca:'negra' },
+  { emoji:'🥤', nombre:'Vaso desechable sucio', caneca:'negra' },
+  { emoji:'🍟', nombre:'Paquete de papitas engrasado', caneca:'negra' },
+  { emoji:'🍕', nombre:'Cartón de pizza con grasa', caneca:'negra' },
+  { emoji:'🍬', nombre:'Envoltura de dulce', caneca:'negra' }
+];
+const BANCO_VF = [
+  { f:'Una botella con restos de comida se puede reciclar sin lavarla.', v:false },
+  { f:'El vidrio se puede reciclar infinitas veces sin perder calidad.', v:true },
+  { f:'Los residuos orgánicos pueden convertirse en compost para las plantas.', v:true },
+  { f:'La caneca blanca es para los residuos aprovechables como plástico y cartón.', v:true },
+  { f:'Las cáscaras de fruta van en la caneca negra.', v:false },
+  { f:'Separar los residuos en casa le facilita el trabajo a los recicladores.', v:true },
+  { f:'Todo lo que sea de papel se puede reciclar, aunque esté sucio o engrasado.', v:false },
+  { f:'Una lata de gaseosa vacía se puede reciclar.', v:true },
+  { f:'Si mezclo todos los residuos en una sola bolsa, igual se pueden aprovechar.', v:false },
+  { f:'Reutilizar una bolsa es mejor para el planeta que estrenar una nueva.', v:true },
+  { f:'Dejar las luces encendidas al salir no gasta energía.', v:false },
+  { f:'Llevar tu propia botella reutilizable reduce los residuos plásticos.', v:true }
 ];
 function pasoReciclaje(panel){
+  const RESIDUOS = elegir(BANCO_RESIDUOS, 6, 'e3-residuos');
   let idx = 0, aciertos = 0, bloqueo = false;
   panel.innerHTML = `
     <div class="contador-reto" id="cont"></div>
@@ -1067,11 +1363,7 @@ function pasoReciclaje(panel){
   pintar();
 }
 function pasoVF(panel){
-  const FRASES = [
-    { f:'Una botella con restos de comida se puede reciclar sin lavarla.', v:false },
-    { f:'El vidrio se puede reciclar infinitas veces sin perder calidad.', v:true },
-    { f:'Los residuos orgánicos pueden convertirse en compost para las plantas.', v:true }
-  ];
+  const FRASES = elegir(BANCO_VF, 3, 'e3-vf');
   let idx = 0, aciertos = 0, bloqueo = false;
   panel.innerHTML = `
     <div class="contador-reto" id="cont"></div>
@@ -1107,16 +1399,37 @@ function pasoVF(panel){
 }
 
 /* =====================================================================
-   E4 · INTERACCIÓN
+   E4 · INTERACCIÓN — el hijo Vital
    ===================================================================== */
-const TRIVIA = [
+const BANCO_TRIVIA = [
   { p:'¿Cuál de estos alimentos es una buena fuente de proteína?', ops:['Manzana','Arroz','Pollo','Lechuga'], ok:2 },
   { p:'¿Cuál es la mejor bebida para hidratarte durante el ejercicio?', ops:['Agua','Café','Gaseosa','Jugo con azúcar'], ok:0 },
   { p:'Dormir bien ayuda a…', ops:['Nada en especial','La memoria y el ánimo','Solo a los niños','Subir de peso'], ok:1 },
   { p:'Una pausa activa en el trabajo o estudio sirve para…', ops:['Perder tiempo','Reducir estrés y activar el cuerpo','Comer más','Revisar redes'], ok:1 },
-  { p:'¿Cada cuánto se recomienda levantarse si trabajas sentado?', ops:['Cada hora','Una vez al día','Nunca','Solo al almorzar'], ok:0 }
+  { p:'¿Cada cuánto se recomienda levantarse si trabajas sentado?', ops:['Cada hora','Una vez al día','Nunca','Solo al almorzar'], ok:0 },
+  { p:'¿Cuántas horas de sueño se recomiendan para un adulto?', ops:['3 a 4','5','7 a 9','12 o más'], ok:2 },
+  { p:'¿Cuántas porciones de frutas y verduras se recomiendan al día?', ops:['Ninguna','1','5','Solo en almuerzo'], ok:2 },
+  { p:'El desayuno ideal incluye…', ops:['Solo café','Fruta, proteína y cereal','Solo pan','Nada, es mejor saltarlo'], ok:1 },
+  { p:'Pasar tiempo al aire libre ayuda a…', ops:['Mejorar el ánimo','Nada','Dañar la piel siempre','Perder el tiempo'], ok:0 },
+  { p:'¿Qué es la hidratación?', ops:['Tomar solo jugos','Darle al cuerpo el agua que necesita','Bañarse seguido','Sudar mucho'], ok:1 },
+  { p:'Reír con frecuencia…', ops:['Reduce el estrés','No sirve de nada','Cansa el corazón','Da sueño'], ok:0 },
+  { p:'¿Cuál es un buen hábito antes de dormir?', ops:['Ver pantallas en la cama','Tomar café','Desconectarse de pantallas un rato antes','Hacer ejercicio fuerte'], ok:2 },
+  { p:'Compartir tiempo en familia aporta a tu…', ops:['Bienestar emocional','Fuerza física','Estatura','Velocidad'], ok:0 },
+  { p:'Si un amigo está triste, lo mejor es…', ops:['Ignorarlo','Escucharlo y acompañarlo','Burlarse','Contarle a todos'], ok:1 },
+  { p:'El estrés se puede manejar con…', ops:['Respiración y pausas','Más trabajo','Aguantar callado','Dormir menos'], ok:0 },
+  { p:'¿Qué bebida deberías tomar más veces al día?', ops:['Agua','Gaseosa','Bebida energizante','Café'], ok:0 },
+  { p:'Estirar el cuerpo al despertar sirve para…', ops:['Activar músculos y circulación','Nada','Dar pereza','Volver a dormir'], ok:0 },
+  { p:'¿Cuál de estas actividades es ejercicio?', ops:['Bailar','Ver TV','Jugar videojuegos sentado','Dormir'], ok:0 },
+  { p:'Lavarse las manos con frecuencia…', ops:['Previene enfermedades','Es exagerado','Solo aplica a médicos','Daña la piel siempre'], ok:0 },
+  { p:'Una alimentación balanceada significa…', ops:['Comer de todo en porciones adecuadas','Comer solo ensalada','No comer nada dulce jamás','Comer una vez al día'], ok:0 },
+  { p:'Cuidar los parques y zonas verdes es tarea de…', ops:['Todos','Solo el gobierno','Solo los guardaparques','Nadie'], ok:0 },
+  { p:'¿Qué hace el ejercicio por tu mente?', ops:['Libera estrés y mejora el ánimo','Nada','La cansa','La distrae de lo importante'], ok:0 },
+  { p:'Tomar el sol con protección unos minutos al día ayuda a…', ops:['Producir vitamina D','Nada','Dormir menos','Crecer más rápido'], ok:0 },
+  { p:'Si vas a hacer deporte al aire libre, no olvides…', ops:['Hidratarte y usar protector solar','Ropa muy abrigada siempre','Comer justo antes','Aguantar sed'], ok:0 },
+  { p:'El tiempo en familia sin celulares se llama…', ops:['Tiempo de calidad','Tiempo perdido','Aburrimiento','Castigo'], ok:0 }
 ];
 function pasoTrivia(panel){
+  const TRIVIA = elegir(BANCO_TRIVIA, 5, 'e4-trivia');
   let idx=0, aciertos=0, bloqueo=false, timer=null;
   panel.innerHTML = `
     <div class="trivia-crono">
@@ -1226,23 +1539,70 @@ function pasoReflejos(panel){
 }
 
 /* =====================================================================
-   FINAL
+   FINAL — código único de WeShop
+   Reglas: máx 2 códigos por cédula al mes · vigencia de 2 meses ·
+   la base de códigos se carga por mes en la pestaña "codigos" del Sheet.
    ===================================================================== */
 function finalizar(){
-  if(!estado.codigo){
-    // >>> INTEGRACIÓN BACKEND: pedir código único a Firebase (transacción) <<<
-    const usados = JSON.parse(localStorage.getItem('cv_codigos_usados')||'[]');
-    estado.codigo = CODIGOS.find(c=>!usados.includes(c)) || 'AGOTADO';
-    usados.push(estado.codigo);
-    localStorage.setItem('cv_codigos_usados', JSON.stringify(usados));
-    guardar();
-  }
-  document.getElementById('codigo-final').textContent = estado.codigo;
+  if(estado.codigo){ mostrarCodigo(estado.codigo, estado.codigoVigencia); return; }
+  const btn = document.getElementById('btn-premio');
+  btn.classList.add('cargando');
+  Backend.asignarCodigo().then(r=>{
+    btn.classList.remove('cargando');
+    if(r === undefined){
+      /* MODO LOCAL (sin backend): mismas reglas, con la lista de respaldo */
+      if(codigosEsteMes() >= CONFIG.MAX_CODIGOS_MES){ avisoLimiteMes(); return; }
+      const usados = JSON.parse(localStorage.getItem('cv_codigos_usados')||'[]');
+      const codigo = CODIGOS_LOCAL.find(c=>!usados.includes(c));
+      if(!codigo){ avisoAgotados(); return; }
+      usados.push(codigo);
+      localStorage.setItem('cv_codigos_usados', JSON.stringify(usados));
+      entregarCodigo(codigo, fechaVigencia());
+      return;
+    }
+    if(r && r.codigo){ entregarCodigo(r.codigo, r.valido_hasta || fechaVigencia()); return; }
+    if(r && r.error === 'limite_mes'){ avisoLimiteMes(); return; }
+    avisoAgotados();
+  }).catch(()=>{
+    btn.classList.remove('cargando');
+    alert('No pudimos asignar tu código. Revisa tu conexión e intenta de nuevo.');
+  });
+}
+function entregarCodigo(codigo, vigencia){
+  estado.codigo = codigo;
+  estado.codigoVigencia = vigencia;
+  estado.codigos.push({ codigo, fecha:new Date().toISOString(), valido_hasta:vigencia });
+  guardar();
+  Backend.guardarUsuario();
+  mostrarCodigo(codigo, vigencia);
+}
+function avisoLimiteMes(){
+  alert('¡Ya redimiste tus ' + CONFIG.MAX_CODIGOS_MES + ' códigos de este mes! Te esperamos el próximo mes para seguir sumando bienestar.');
+}
+function avisoAgotados(){
+  alert('Por ahora no hay códigos disponibles. Acércate al staff del evento.');
+}
+function mostrarCodigo(codigo, vigencia){
+  document.getElementById('codigo-final').textContent = codigo;
+  document.getElementById('codigo-vigencia').textContent = vigencia
+    ? 'Válido para redimir hasta el ' + vigencia + '.'
+    : '';
   ir('v-final');
   lanzarConfeti();
 }
+/* nuevo recorrido: reinicia el pasaporte con retos diferentes (máx 2 códigos/mes) */
+function jugarOtraVez(){
+  estado.vuelta = (estado.vuelta || 1) + 1;
+  estado.progreso = {1:false,2:false,3:false,4:false};
+  estado.codigo = null;
+  estado.codigoVigencia = null;
+  guardar();
+  Backend.guardarUsuario();
+  Backend.reportarReinicio();
+  ir('v-pasaporte');
+}
 function lanzarConfeti(){
-  const colores = ['#9BD4F5','#F5A623','#6FBF73','#9B7FD4','#FFFFFF'];
+  const colores = ['#9BD4F5','#F58220','#6FBF73','#9B7FD4','#FFFFFF'];
   for(let i=0;i<44;i++){
     const c = document.createElement('div');
     c.className='confeti';
