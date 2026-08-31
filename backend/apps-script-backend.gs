@@ -256,3 +256,131 @@ function json(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }
+
+/* ====================== LOOK & FEEL (ejecutar 1 vez) ======================
+   Formatea todas las pestañas con la marca y crea la pestaña "Dashboard"
+   con métricas en vivo. Se puede volver a ejecutar sin dañar nada. */
+function embellecer() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  /* separador de argumentos según el idioma del archivo (es → ";") */
+  var SEP = ((ss.getSpreadsheetLocale() || '').indexOf('en') === 0) ? ',' : ';';
+  var TINTA = '#123A5C', CIELO = '#57AEE4', VERDE = '#6FBF73',
+      LILA = '#9B7FD4', SOL = '#F58220', ROJO = '#E45B5B';
+  var S_VERDE = '#DFF3E0', S_CIELO = '#E3F2FC', S_LILA = '#EFE9FA',
+      S_SOL = '#FDE9D7', HIELO = '#EAF6FE', ROJO_S = '#FDECEC';
+
+  decorarTab(ss, 'parques',       VERDE, S_VERDE);
+  decorarTab(ss, 'participantes', TINTA, HIELO);
+  decorarTab(ss, 'estaciones',    CIELO, S_CIELO);
+  decorarTab(ss, 'codigos',       SOL,   S_SOL);
+  decorarTab(ss, 'intenciones',   LILA,  S_LILA);
+
+  /* semáforos sí/no y pendientes en participantes */
+  var hp = ss.getSheetByName('participantes');
+  if (hp) {
+    var rEst = hp.getRange('P2:S1000'), rPen = hp.getRange('T2:T1000');
+    var reglas = [
+      SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('sí')
+        .setBackground(S_VERDE).setFontColor('#2F7D33').setRanges([rEst]).build(),
+      SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('no')
+        .setBackground(ROJO_S).setFontColor(ROJO).setRanges([rEst]).build(),
+      SpreadsheetApp.newConditionalFormatRule().whenCellNotEmpty()
+        .setBackground(S_SOL).setFontColor('#9A5B14').setRanges([rPen]).build()
+    ];
+    hp.setConditionalFormatRules(reglas);
+    hp.getRange('K2:K1000').setFontSize(8).setFontColor('#8A99A8');
+  }
+
+  /* ------------------------------ Dashboard ------------------------------ */
+  var d = ss.getSheetByName('Dashboard');
+  if (!d) d = ss.insertSheet('Dashboard', 0);
+  d.clear();
+  d.getBandings().forEach(function(b){ b.remove(); });
+  d.setHiddenGridlines(true);
+  d.setTabColor(TINTA);
+  d.getRange('A1:J30').setBackground('#FFFFFF').setFontFamily('Montserrat').setFontColor(TINTA);
+
+  d.setColumnWidth(1, 18);
+  d.setColumnWidths(2, 1, 150); d.setColumnWidths(3, 4, 72);
+  d.setColumnWidth(7, 40); d.setColumnWidth(8, 150); d.setColumnWidth(9, 100);
+  d.setRowHeights(1, 1, 14); d.setRowHeights(2, 1, 8);
+  d.setRowHeights(3, 1, 34); d.setRowHeights(4, 1, 22);
+  d.setRowHeights(5, 1, 12); d.setRowHeights(6, 1, 22);
+  d.setRowHeights(7, 2, 24); d.setRowHeights(9, 1, 16);
+
+  /* franja de marca */
+  d.getRange('B2:I4').setBackground(TINTA);
+  d.getRange('B3:I3').merge().setValue('CONEXIÓN VITAL · PROGRAMA ACTIVAR')
+    .setFontColor('#FFFFFF').setFontSize(16).setFontWeight('bold')
+    .setHorizontalAlignment('center');
+  d.getRange('B4:I4').merge().setValue('Fundación Postobón · datos en vivo del circuito de bienestar')
+    .setFontColor(CIELO).setFontSize(10).setHorizontalAlignment('center');
+
+  /* tarjetas de indicadores */
+  tarjeta(d, 'B6:C6', 'B7:C8', 'PARTICIPANTES', '=COUNTA(participantes!A2:A)', HIELO, TINTA);
+  tarjeta(d, 'D6:E6', 'D7:E8', 'CIRCUITOS COMPLETOS', '=SUM(participantes!M2:M)', S_VERDE, '#2F7D33');
+  tarjeta(d, 'F6:G6', 'F7:G8', 'CÓDIGOS ENTREGADOS', '=COUNTIF(codigos!C2:C' + SEP + '"?*")', S_SOL, '#9A5B14');
+  tarjeta(d, 'H6:I6', 'H7:I8', 'DISPONIBLES ESTE MES',
+    '=SUMPRODUCT((LEFT(TO_TEXT(codigos!B2:B)' + SEP + '7)=TEXT(TODAY()' + SEP + '"yyyy-MM"))*(codigos!C2:C="")*(codigos!A2:A<>""))',
+    S_LILA, '#5B3E9E');
+
+  /* embudo por estación */
+  d.getRange('B10:F10').merge().setValue('EMBUDO POR ESTACIÓN (completaron)')
+    .setFontWeight('bold').setFontSize(11);
+  var estaciones = [
+    ['1 · Movimiento',  'P', VERDE],
+    ['2 · Conexión',    'Q', LILA],
+    ['3 · Bienestar',   'R', CIELO],
+    ['4 · Interacción', 'S', SOL]
+  ];
+  for (var i = 0; i < 4; i++) {
+    var fila = 11 + i;
+    d.getRange('B' + fila).setValue(estaciones[i][0]).setFontSize(10);
+    d.getRange('C' + fila).setFormula('=COUNTIF(participantes!' + estaciones[i][1] + '2:' + estaciones[i][1] + SEP + '"sí")')
+      .setFontWeight('bold').setHorizontalAlignment('center');
+    d.getRange('D' + fila + ':F' + fila).merge()
+      .setFormula('=REPT("█"' + SEP + 'ROUND(24*C' + fila + '/MAX(1' + SEP + '$B$7)))')
+      .setFontColor(estaciones[i][2]).setFontSize(12).setHorizontalAlignment('left');
+  }
+  d.getRange('B16').setValue('Con estaciones pendientes (posible deserción):').setFontSize(10);
+  d.getRange('C16').setFormula('=COUNTIF(participantes!T2:T' + SEP + '"?*")')
+    .setFontWeight('bold').setFontColor(ROJO).setHorizontalAlignment('center');
+
+  /* participantes por parque */
+  d.getRange('H10:I10').merge().setValue('POR PARQUE / CLUB').setFontWeight('bold').setFontSize(11);
+  d.getRange('H11').setFormula('=ARRAYFORMULA(IF(parques!A2:A10=""' + SEP + '""' + SEP + 'parques!B2:B10))');
+  d.getRange('I11').setFormula('=ARRAYFORMULA(IF(parques!A2:A10=""' + SEP + '""' + SEP + 'COUNTIF(participantes!H2:H' + SEP + 'parques!A2:A10)))');
+  d.getRange('H11:H19').setFontSize(10);
+  d.getRange('I11:I19').setFontWeight('bold').setHorizontalAlignment('center');
+
+  d.getRange('B19:I19').merge().setValue('Los datos se actualizan solos con cada participación en los parques.')
+    .setFontSize(9).setFontColor('#8A99A8');
+
+  ss.setActiveSheet(d);
+  ss.moveActiveSheet(1);
+}
+
+function decorarTab(ss, nombre, color, suave) {
+  var h = ss.getSheetByName(nombre);
+  if (!h) return;
+  var cols = Math.max(1, h.getLastColumn());
+  h.setTabColor(color);
+  h.setFrozenRows(1);
+  h.getRange(1, 1, 1, cols).setBackground(color).setFontColor('#FFFFFF')
+    .setFontWeight('bold').setFontSize(10).setFontFamily('Montserrat');
+  h.setRowHeight(1, 28);
+  h.getBandings().forEach(function(b){ b.remove(); });
+  h.getRange(2, 1, 999, cols).applyRowBanding(SpreadsheetApp.BandingTheme.LIGHT_GREY, false, false)
+    .setFirstRowColor('#FFFFFF').setSecondRowColor(suave);
+  for (var c = 1; c <= cols; c++) h.autoResizeColumn(c);
+  if (h.getColumnWidth(1) < 90) h.setColumnWidth(1, 90);
+}
+
+function tarjeta(d, rLabel, rNum, texto, formula, fondo, colorNum) {
+  d.getRange(rLabel).merge().setValue(texto).setBackground(fondo)
+    .setFontSize(8).setFontWeight('bold').setHorizontalAlignment('center')
+    .setFontColor(colorNum);
+  d.getRange(rNum).merge().setFormula(formula).setBackground(fondo)
+    .setFontSize(24).setFontWeight('bold').setHorizontalAlignment('center')
+    .setVerticalAlignment('middle').setFontColor(colorNum);
+}
