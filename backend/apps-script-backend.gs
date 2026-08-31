@@ -55,6 +55,14 @@ function instalar() {
   hoja(ss, 'estaciones', ['fecha','documento','parque_qr','parque_juego','estacion','vuelta']);
   hoja(ss, 'codigos', ['codigo','mes','documento','parque_juego','fecha_asignado','valido_hasta']);
   hoja(ss, 'intenciones', ['fecha','documento','intencion','vuelta']);
+  hoja(ss, 'usuarios', ['usuario','hash','sal','rol','activo','creado']);
+  hoja(ss, 'sesiones', ['token','usuario','rol','expira']);
+  var hu = ss.getSheetByName('usuarios');
+  if (hu.getLastRow() < 2) {
+    var sal = Utilities.getUuid();
+    hu.appendRow(['felipe', hashClave('Activar2026*CV', sal), sal, 'superadmin', 'si',
+                  Utilities.formatDate(new Date(), ZONA, 'yyyy-MM-dd HH:mm:ss')]);
+  }
 }
 
 function hoja(ss, nombre, encabezados) {
@@ -179,6 +187,8 @@ function doPost(e) {
   if (tipo === 'codigo')    return json(asignarCodigo(d));
   if (tipo === 'intencion') return json(guardarIntencion(d));
   if (tipo === 'reinicio')  return json(registrar(d)); // el reinicio actualiza vuelta y progreso
+  if (tipo === 'login')     return json(login(d));
+  if (tipo === 'admin')     return json(adminRouter(d));
   return json({ error: 'tipo desconocido' });
 }
 
@@ -440,4 +450,206 @@ function tarjeta(d, rLabel, rNum, texto, formula, fondo, colorNum) {
   d.getRange(rNum).merge().setFormula(formula).setBackground(fondo)
     .setFontSize(24).setFontWeight('bold').setHorizontalAlignment('center')
     .setVerticalAlignment('middle').setFontColor(colorNum);
+}
+
+/* ====================== ADMINISTRACIÓN (login + roles) ======================
+   Usuarios en la pestaña "usuarios" (contraseña con hash SHA-256 + sal).
+   Roles: superadmin (todo), admin (cifras + descargas + cargar códigos),
+   lector (solo cifras). Las sesiones duran 12 horas. */
+
+var SESION_HORAS = 12;
+
+function hashClave(clave, sal) {
+  var raw = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, sal + '|' + clave, Utilities.Charset.UTF_8);
+  return raw.map(function(b){ var v = (b + 256) % 256; return ('0' + v.toString(16)).slice(-2); }).join('');
+}
+
+function login(d) {
+  var usuario = String(d.usuario || '').trim().toLowerCase();
+  var clave = String(d.clave || '');
+  if (!usuario || !clave) return { error: 'credenciales' };
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hu = ss.getSheetByName('usuarios');
+  if (!hu) return { error: 'credenciales' };
+  var filas = hu.getDataRange().getValues();
+  for (var i = 1; i < filas.length; i++) {
+    if (String(filas[i][0]).trim().toLowerCase() === usuario &&
+        String(filas[i][4]).toLowerCase().indexOf('s') === 0) {
+      if (hashClave(clave, String(filas[i][2])) === String(filas[i][1])) {
+        var hs = hoja(ss, 'sesiones', []);
+        limpiarSesiones(hs);
+        var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+        hs.appendRow([token, usuario, String(filas[i][3]), Date.now() + SESION_HORAS * 3600 * 1000]);
+        return { token: token, usuario: usuario, rol: String(filas[i][3]) };
+      }
+      break;
+    }
+  }
+  Utilities.sleep(600);
+  return { error: 'credenciales' };
+}
+
+function limpiarSesiones(hs) {
+  var filas = hs.getDataRange().getValues();
+  for (var i = filas.length - 1; i >= 1; i--) {
+    if (Number(filas[i][3]) < Date.now()) hs.deleteRow(i + 1);
+  }
+}
+
+function sesionDe(token) {
+  if (!token) return null;
+  var hs = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('sesiones');
+  if (!hs) return null;
+  var filas = hs.getDataRange().getValues();
+  for (var i = 1; i < filas.length; i++) {
+    if (String(filas[i][0]) === String(token) && Number(filas[i][3]) > Date.now()) {
+      return { usuario: String(filas[i][1]), rol: String(filas[i][2]), fila: i + 1 };
+    }
+  }
+  return null;
+}
+
+function adminRouter(d) {
+  var s = sesionDe(d.token);
+  if (!s) return { error: 'sesion' };
+  var accion = String(d.accion || '');
+  var esAdmin = (s.rol === 'admin' || s.rol === 'superadmin');
+  var esSuper = (s.rol === 'superadmin');
+
+  if (accion === 'datos')   return adminDatos(s);
+  if (accion === 'logout')  { SpreadsheetApp.getActiveSpreadsheet().getSheetByName('sesiones').deleteRow(s.fila); return { ok: true }; }
+  if (accion === 'clave')   return cambiarClave(s, d);
+  if (accion === 'descargar')          return esAdmin ? descargarTabla(d) : { error: 'permiso' };
+  if (accion === 'cargar_codigos')     return esAdmin ? cargarCodigos(d) : { error: 'permiso' };
+  if (accion === 'usuarios')           return esSuper ? usuariosLista() : { error: 'permiso' };
+  if (accion === 'usuario_guardar')    return esSuper ? usuarioGuardar(s, d) : { error: 'permiso' };
+  if (accion === 'borrar_participante')return esSuper ? borrarParticipante(d) : { error: 'permiso' };
+  return { error: 'accion' };
+}
+
+function adminDatos(s) {
+  var m = metricas();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hc = ss.getSheetByName('codigos');
+  var meses = {};
+  if (hc && hc.getLastRow() > 1) {
+    hc.getDataRange().getValues().slice(1).forEach(function(f) {
+      if (!f[0]) return;
+      var mes = normalizarMes(f[1]) || 'sin mes';
+      if (!meses[mes]) meses[mes] = { mes: mes, total: 0, usados: 0, libres: 0 };
+      meses[mes].total++;
+      if (f[2]) meses[mes].usados++; else meses[mes].libres++;
+    });
+  }
+  var lista = Object.keys(meses).sort().reverse().map(function(k){ return meses[k]; });
+  return { usuario: s.usuario, rol: s.rol, metricas: m, codigos_mes: lista };
+}
+
+function cambiarClave(s, d) {
+  var actual = String(d.actual || ''), nueva = String(d.nueva || '');
+  if (nueva.length < 8) return { error: 'clave_corta' };
+  var hu = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('usuarios');
+  var filas = hu.getDataRange().getValues();
+  for (var i = 1; i < filas.length; i++) {
+    if (String(filas[i][0]).trim().toLowerCase() === s.usuario) {
+      if (hashClave(actual, String(filas[i][2])) !== String(filas[i][1])) return { error: 'credenciales' };
+      var sal = Utilities.getUuid();
+      hu.getRange(i + 1, 2).setValue(hashClave(nueva, sal));
+      hu.getRange(i + 1, 3).setValue(sal);
+      return { ok: true };
+    }
+  }
+  return { error: 'credenciales' };
+}
+
+function descargarTabla(d) {
+  var permitidas = ['participantes', 'estaciones', 'codigos', 'intenciones', 'parques'];
+  var tabla = String(d.tabla || '');
+  if (permitidas.indexOf(tabla) === -1) return { error: 'tabla' };
+  var h = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(tabla);
+  if (!h) return { error: 'tabla' };
+  var filas = h.getDataRange().getValues();
+  var csv = filas.map(function(fila) {
+    return fila.map(function(v) {
+      if (v instanceof Date) v = Utilities.formatDate(v, ZONA, 'yyyy-MM-dd HH:mm:ss');
+      v = String(v == null ? '' : v);
+      return /[",\n;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+    }).join(',');
+  }).join('\r\n');
+  return { nombre: tabla + '.csv', csv: csv };
+}
+
+function cargarCodigos(d) {
+  var mes = String(d.mes || '').trim();
+  if (!/^\d{4}-\d{2}$/.test(mes)) return { error: 'mes' };
+  var lista = (d.codigos || []).map(function(c){ return String(c).trim(); }).filter(function(c){ return c; });
+  if (!lista.length) return { error: 'vacio' };
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var h = hoja(SpreadsheetApp.getActiveSpreadsheet(), 'codigos', []);
+    var existentes = {};
+    h.getDataRange().getValues().slice(1).forEach(function(f){ if (f[0]) existentes[String(f[0]).trim()] = true; });
+    var nuevas = [], duplicados = 0;
+    lista.forEach(function(c) {
+      if (existentes[c]) { duplicados++; return; }
+      existentes[c] = true;
+      nuevas.push([c, mes, '', '', '', '']);
+    });
+    if (nuevas.length) h.getRange(h.getLastRow() + 1, 1, nuevas.length, 6).setValues(nuevas);
+    return { ok: true, agregados: nuevas.length, duplicados: duplicados };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function usuariosLista() {
+  var hu = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('usuarios');
+  if (!hu || hu.getLastRow() < 2) return { usuarios: [] };
+  return { usuarios: hu.getDataRange().getValues().slice(1).filter(function(f){ return f[0]; }).map(function(f) {
+    return { usuario: String(f[0]), rol: String(f[3]), activo: String(f[4]).toLowerCase().indexOf('s') === 0,
+             creado: f[5] instanceof Date ? Utilities.formatDate(f[5], ZONA, 'yyyy-MM-dd') : String(f[5]).slice(0, 10) };
+  }) };
+}
+
+function usuarioGuardar(s, d) {
+  var usuario = String(d.usuario || '').trim().toLowerCase();
+  var rol = String(d.rol || '');
+  var activo = d.activo === false ? 'no' : 'si';
+  var clave = String(d.clave || '');
+  if (!/^[a-z0-9._-]{3,30}$/.test(usuario)) return { error: 'usuario' };
+  if (['superadmin', 'admin', 'lector'].indexOf(rol) === -1) return { error: 'rol' };
+  if (usuario === s.usuario && (rol !== 'superadmin' || activo === 'no')) return { error: 'propio' };
+  var hu = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('usuarios');
+  var filas = hu.getDataRange().getValues();
+  for (var i = 1; i < filas.length; i++) {
+    if (String(filas[i][0]).trim().toLowerCase() === usuario) {
+      hu.getRange(i + 1, 4).setValue(rol);
+      hu.getRange(i + 1, 5).setValue(activo);
+      if (clave) {
+        if (clave.length < 8) return { error: 'clave_corta' };
+        var sal = Utilities.getUuid();
+        hu.getRange(i + 1, 2).setValue(hashClave(clave, sal));
+        hu.getRange(i + 1, 3).setValue(sal);
+      }
+      return { ok: true, actualizado: true };
+    }
+  }
+  if (clave.length < 8) return { error: 'clave_corta' };
+  var sal2 = Utilities.getUuid();
+  hu.appendRow([usuario, hashClave(clave, sal2), sal2, rol, activo,
+                Utilities.formatDate(new Date(), ZONA, 'yyyy-MM-dd HH:mm:ss')]);
+  return { ok: true, creado: true };
+}
+
+function borrarParticipante(d) {
+  var doc = String(d.doc || '').replace(/\D/g, '');
+  if (!doc) return { error: 'doc' };
+  var h = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('participantes');
+  if (!h) return { error: 'no_existe' };
+  var filas = h.getDataRange().getValues();
+  for (var i = 1; i < filas.length; i++) {
+    if (String(filas[i][0]) === doc) { h.deleteRow(i + 1); return { ok: true }; }
+  }
+  return { error: 'no_existe' };
 }

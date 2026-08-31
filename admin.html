@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Conexión Vital · Administración</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --tinta:#123A5C; --tinta-osc:#0C2A45; --cielo:#57AEE4;
+  --verde:#4E9E53; --lila:#5B3E9E; --celeste:#3391CC; --sol:#D96A0B; --rojo:#C24141;
+  --fondo:#F4F7FA; --tarjeta:#FFFFFF; --texto:#123A5C; --texto2:#5A7186; --borde:#E3EAF1;
+  --pista:#EDF2F7; --ok:#2F7D33; --okbg:#E8F5E9;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Montserrat',system-ui,sans-serif;background:var(--fondo);color:var(--texto);min-height:100vh}
+[hidden]{display:none!important}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:14px;color:var(--texto);border:1.5px solid var(--borde);border-radius:10px;padding:11px 13px;width:100%;background:#fff}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--cielo)}
+label{font-size:11.5px;font-weight:700;color:var(--texto2);text-transform:uppercase;letter-spacing:.6px;display:block;margin:12px 0 5px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--tinta);color:#fff;border:none;border-radius:10px;padding:12px 20px;font-size:14px;font-weight:700;transition:opacity .15s}
+.btn:hover{opacity:.9}
+.btn.sec{background:#fff;color:var(--tinta);border:1.5px solid var(--borde)}
+.btn.peligro{background:var(--rojo)}
+.btn:disabled{opacity:.5;cursor:default}
+.msg{border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600;margin-top:12px}
+.msg.ok{background:var(--okbg);color:var(--ok)}
+.msg.mal{background:#FDECEC;color:var(--rojo)}
+
+/* ---------- login ---------- */
+#v-login{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--tinta) 0%,var(--tinta-osc) 100%);padding:20px}
+.login-card{background:#fff;border-radius:20px;padding:36px 32px;width:100%;max-width:380px;box-shadow:0 24px 60px rgba(0,0,0,.3);text-align:center}
+.login-card img{height:74px;margin-bottom:10px}
+.login-card h1{font-size:17px;font-weight:800;letter-spacing:.4px}
+.login-card p{font-size:12.5px;color:var(--texto2);margin-top:4px;margin-bottom:8px}
+.login-card form{text-align:left}
+.login-card .btn{width:100%;margin-top:18px}
+
+/* ---------- shell ---------- */
+#v-panel header{background:linear-gradient(135deg,var(--tinta) 0%,var(--tinta-osc) 100%);color:#fff;padding:16px 22px}
+.top{max-width:1060px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.top img{height:44px}
+.top .tit{font-size:15px;font-weight:800;letter-spacing:.4px}
+.top .tit small{display:block;font-size:11px;color:var(--cielo);font-weight:600}
+.top .quien{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:12.5px}
+.rol-chip{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);padding:5px 11px;border-radius:99px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.salir{background:none;border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:99px;padding:6px 14px;font-size:12px;font-weight:700}
+.salir:hover{background:rgba(255,255,255,.12)}
+
+nav{background:#fff;border-bottom:1px solid var(--borde)}
+.tabs{max-width:1060px;margin:0 auto;display:flex;gap:4px;padding:0 22px;overflow-x:auto}
+.tab{background:none;border:none;padding:14px 16px;font-size:13.5px;font-weight:700;color:var(--texto2);border-bottom:3px solid transparent;white-space:nowrap}
+.tab.activa{color:var(--tinta);border-bottom-color:var(--cielo)}
+
+main{max-width:1060px;margin:0 auto;padding:24px 22px 60px}
+.grid-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.kpi{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:16px 18px;box-shadow:0 6px 18px rgba(18,58,92,.06)}
+.kpi .et{font-size:10.5px;font-weight:700;letter-spacing:.7px;color:var(--texto2);text-transform:uppercase}
+.kpi .num{font-size:34px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
+.k1 .num{color:var(--tinta)}.k2 .num{color:var(--verde)}.k3 .num{color:var(--sol)}.k4 .num{color:var(--lila)}.k5 .num{color:var(--rojo)}
+.paneles{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-top:14px}
+@media(max-width:860px){.paneles{grid-template-columns:1fr}}
+section.card{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:22px;box-shadow:0 6px 18px rgba(18,58,92,.06)}
+section.card h2{font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;margin-bottom:14px}
+section.card h2 span{color:var(--texto2);font-weight:600;text-transform:none;letter-spacing:0;font-size:12px}
+.fila{display:grid;grid-template-columns:140px 1fr 40px;align-items:center;gap:10px;padding:6px 0}
+.fila .nom{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.fila .nom i{width:10px;height:10px;border-radius:3px;flex:none}
+.pista{background:var(--pista);border-radius:6px;height:14px;overflow:hidden}
+.barra{height:100%;width:0;border-radius:0 4px 4px 0;transition:width .8s cubic-bezier(.22,.9,.35,1)}
+.fila .val{font-size:13.5px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
+.e1{background:var(--verde)}.e2{background:var(--lila)}.e3{background:var(--celeste)}.e4{background:var(--sol)}.bp{background:var(--celeste)}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--texto2);text-align:left;padding:8px 10px;border-bottom:2px solid var(--borde)}
+td{padding:10px;border-bottom:1px solid var(--borde);font-variant-numeric:tabular-nums}
+td.num,th.num{text-align:right}
+.pill{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.pill.superadmin{background:#EFE9FA;color:var(--lila)}
+.pill.admin{background:#E3F2FC;color:var(--celeste)}
+.pill.lector{background:var(--pista);color:var(--texto2)}
+.pill.si{background:var(--okbg);color:var(--ok)}
+.pill.no{background:#FDECEC;color:var(--rojo)}
+.mini{background:none;border:none;color:var(--celeste);font-weight:700;font-size:12.5px;text-decoration:underline}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+@media(max-width:640px){.grid2{grid-template-columns:1fr}}
+.nota{font-size:12.5px;color:var(--texto2);margin-top:10px;line-height:1.5}
+.desc-fila{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--borde);flex-wrap:wrap}
+.desc-fila b{font-size:14px}
+.desc-fila small{display:block;color:var(--texto2);font-weight:400;margin-top:2px;font-size:12px}
+#cargando-panel{text-align:center;color:var(--texto2);font-weight:600;padding:80px 0}
+.spin{width:32px;height:32px;border:4px solid var(--borde);border-top-color:var(--cielo);border-radius:50%;margin:0 auto 12px;animation:g 1s linear infinite}
+@keyframes g{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="v-login">
+  <div class="login-card">
+    <img src="assets/logo-cv-azul.png" alt="Conexión Vital">
+    <h1>CENTRO DE ADMINISTRACIÓN</h1>
+    <p>Programa Activar · Fundación Postobón</p>
+    <form onsubmit="hacerLogin(event)">
+      <label>Usuario</label>
+      <input id="l-usuario" autocomplete="username" required>
+      <label>Contraseña</label>
+      <input id="l-clave" type="password" autocomplete="current-password" required>
+      <button class="btn" id="l-btn" type="submit">Ingresar</button>
+    </form>
+    <div id="l-msg"></div>
+  </div>
+</div>
+
+<!-- ================= PANEL ================= -->
+<div id="v-panel" hidden>
+  <header>
+    <div class="top">
+      <img src="assets/logo-cv-blanco.png" alt="Conexión Vital">
+      <div class="tit">CENTRO DE ADMINISTRACIÓN<small>Programa Activar · Fundación Postobón</small></div>
+      <div class="quien">
+        <span id="q-usuario" style="font-weight:700"></span>
+        <span class="rol-chip" id="q-rol"></span>
+        <button class="salir" onclick="hacerLogout()">Cerrar sesión</button>
+      </div>
+    </div>
+  </header>
+  <nav><div class="tabs" id="tabs">
+    <button class="tab activa" data-t="t-cifras" onclick="verTab(this)">Cifras</button>
+    <button class="tab" data-t="t-codigos" onclick="verTab(this)" data-rol="admin">Códigos WeShop</button>
+    <button class="tab" data-t="t-descargas" onclick="verTab(this)" data-rol="admin">Descargas</button>
+    <button class="tab" data-t="t-usuarios" onclick="verTab(this)" data-rol="superadmin">Usuarios</button>
+    <button class="tab" data-t="t-cuenta" onclick="verTab(this)">Mi cuenta</button>
+  </div></nav>
+
+  <main>
+    <div id="cargando-panel"><div class="spin"></div>Cargando información…</div>
+
+    <!-- ---------- CIFRAS ---------- -->
+    <div id="t-cifras" class="tcont" hidden>
+      <div class="grid-kpi">
+        <div class="kpi k1"><div class="et">Participantes</div><div class="num" id="c-part">0</div></div>
+        <div class="kpi k2"><div class="et">Circuitos completos</div><div class="num" id="c-circ">0</div></div>
+        <div class="kpi k3"><div class="et">Códigos entregados</div><div class="num" id="c-cod">0</div></div>
+        <div class="kpi k4"><div class="et">Disponibles este mes</div><div class="num" id="c-disp">0</div></div>
+        <div class="kpi k5"><div class="et">Posible deserción</div><div class="num" id="c-pend">0</div></div>
+      </div>
+      <div class="paneles">
+        <section class="card">
+          <h2>Embudo por estación <span>· completaron cada tótem</span></h2>
+          <div id="c-embudo"></div>
+        </section>
+        <section class="card">
+          <h2>Por parque / club</h2>
+          <div id="c-parques"></div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ---------- CÓDIGOS ---------- -->
+    <div id="t-codigos" class="tcont" hidden>
+      <div class="paneles">
+        <section class="card">
+          <h2>Inventario por mes</h2>
+          <table><thead><tr><th>Mes</th><th class="num">Cargados</th><th class="num">Usados</th><th class="num">Libres</th></tr></thead>
+          <tbody id="cod-meses"></tbody></table>
+          <p class="nota" id="cod-vacio" hidden>Aún no hay códigos cargados. Usa el formulario para cargar el lote del mes.</p>
+        </section>
+        <section class="card">
+          <h2>Cargar lote del mes</h2>
+          <label>Mes al que pertenecen</label>
+          <input id="cg-mes" type="month">
+          <label>Códigos (pégalos desde el Excel de WeShop, uno por línea)</label>
+          <textarea id="cg-codigos" rows="8" placeholder="ABC123&#10;DEF456&#10;GHI789"></textarea>
+          <button class="btn" style="margin-top:14px" onclick="cargarLote()">Cargar códigos</button>
+          <div id="cg-msg"></div>
+          <p class="nota">Los códigos repetidos se ignoran automáticamente. El sistema solo entrega códigos del mes en curso, máximo 2 por cédula al mes, con 2 meses de vigencia.</p>
+        </section>
+      </div>
+    </div>
+
+    <!-- ---------- DESCARGAS ---------- -->
+    <div id="t-descargas" class="tcont" hidden>
+      <section class="card">
+        <h2>Descargar la base de datos <span>· archivos CSV, se abren en Excel</span></h2>
+        <div class="desc-fila"><div><b>Participantes</b><small>Base completa: datos de registro, progreso por estación y códigos entregados</small></div><button class="btn sec" onclick="descargar('participantes')">Descargar CSV</button></div>
+        <div class="desc-fila"><div><b>Códigos WeShop</b><small>Todos los códigos cargados, con mes, asignación y vigencia</small></div><button class="btn sec" onclick="descargar('codigos')">Descargar CSV</button></div>
+        <div class="desc-fila"><div><b>Estaciones</b><small>Log de cada estación completada, con fecha y hora (embudo detallado)</small></div><button class="btn sec" onclick="descargar('estaciones')">Descargar CSV</button></div>
+        <div class="desc-fila"><div><b>Intenciones</b><small>Intenciones elegidas en la estación Conexión</small></div><button class="btn sec" onclick="descargar('intenciones')">Descargar CSV</button></div>
+        <div id="d-msg"></div>
+        <p class="nota">Estos archivos contienen datos personales de los participantes: compártelos solo con quien corresponda según la política de datos del programa.</p>
+      </section>
+    </div>
+
+    <!-- ---------- USUARIOS ---------- -->
+    <div id="t-usuarios" class="tcont" hidden>
+      <div class="paneles">
+        <section class="card">
+          <h2>Usuarios del panel</h2>
+          <table><thead><tr><th>Usuario</th><th>Rol</th><th>Estado</th><th></th></tr></thead>
+          <tbody id="u-lista"></tbody></table>
+        </section>
+        <section class="card">
+          <h2 id="u-form-tit">Crear usuario</h2>
+          <label>Usuario</label>
+          <input id="u-usuario" placeholder="ej: maria.fundacion">
+          <div class="grid2">
+            <div><label>Rol</label>
+              <select id="u-rol">
+                <option value="lector">Lector · solo ve cifras</option>
+                <option value="admin">Admin · cifras + descargas + códigos</option>
+                <option value="superadmin">Superadmin · todo</option>
+              </select></div>
+            <div><label>Estado</label>
+              <select id="u-activo"><option value="si">Activo</option><option value="no">Inactivo</option></select></div>
+          </div>
+          <label>Contraseña <span style="text-transform:none;font-weight:400">(mín. 8 caracteres; al editar, déjala vacía para no cambiarla)</span></label>
+          <input id="u-clave" type="password" autocomplete="new-password">
+          <button class="btn" style="margin-top:14px" onclick="guardarUsuario()">Guardar</button>
+          <button class="btn sec" style="margin-top:14px;margin-left:8px" onclick="limpiarFormUsuario()">Limpiar</button>
+          <div id="u-msg"></div>
+        </section>
+      </div>
+      <section class="card" style="margin-top:14px">
+        <h2>Editar la base <span>· borrar un participante (acción definitiva)</span></h2>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <div style="flex:1;min-width:200px"><label>Número de documento</label><input id="b-doc" inputmode="numeric" placeholder="ej: 99887766"></div>
+          <button class="btn peligro" onclick="borrarDoc()">Borrar participante</button>
+        </div>
+        <div id="b-msg"></div>
+      </section>
+    </div>
+
+    <!-- ---------- MI CUENTA ---------- -->
+    <div id="t-cuenta" class="tcont" hidden>
+      <section class="card" style="max-width:460px">
+        <h2>Cambiar mi contraseña</h2>
+        <label>Contraseña actual</label>
+        <input id="p-actual" type="password" autocomplete="current-password">
+        <label>Nueva contraseña (mín. 8 caracteres)</label>
+        <input id="p-nueva" type="password" autocomplete="new-password">
+        <label>Repite la nueva contraseña</label>
+        <input id="p-nueva2" type="password" autocomplete="new-password">
+        <button class="btn" style="margin-top:14px" onclick="cambiarClave()">Actualizar contraseña</button>
+        <div id="p-msg"></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+const API = "https://script.google.com/a/brutalagencia.com/macros/s/AKfycbwywsj6Y-4LdX3vkzVuY1gNgGM-hXWj0NsDXME3L_P4ZFj93G4JbnddMSkh8gn51tgtXg/exec";
+const $ = id => document.getElementById(id);
+const RANGO = { lector: 1, admin: 2, superadmin: 3 };
+let sesion = JSON.parse(localStorage.getItem('cv_admin') || 'null');
+
+async function post(cuerpo){
+  const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(cuerpo) });
+  return r.json();
+}
+function api(accion, extra){ return post(Object.assign({ tipo: 'admin', accion, token: sesion && sesion.token }, extra || {})); }
+function aviso(id, txt, ok){ $(id).innerHTML = txt ? '<div class="msg ' + (ok ? 'ok' : 'mal') + '">' + txt + '</div>' : ''; }
+
+/* ---------- sesión ---------- */
+async function hacerLogin(ev){
+  ev.preventDefault();
+  $("l-btn").disabled = true; aviso('l-msg', '');
+  try {
+    const r = await post({ tipo: 'login', usuario: $("l-usuario").value, clave: $("l-clave").value });
+    if (r.token) {
+      sesion = r; localStorage.setItem('cv_admin', JSON.stringify(r));
+      $("l-clave").value = ''; abrirPanel();
+    } else {
+      aviso('l-msg', 'Usuario o contraseña incorrectos.', false);
+    }
+  } catch (e) { aviso('l-msg', 'No pudimos conectar con el sistema. Intenta de nuevo.', false); }
+  $("l-btn").disabled = false;
+}
+async function hacerLogout(){
+  try { await api('logout'); } catch (e) {}
+  localStorage.removeItem('cv_admin'); sesion = null;
+  $("v-panel").hidden = true; $("v-login").hidden = false;
+}
+function sesionVencida(){
+  localStorage.removeItem('cv_admin'); sesion = null;
+  $("v-panel").hidden = true; $("v-login").hidden = false;
+  aviso('l-msg', 'Tu sesión venció. Ingresa de nuevo.', false);
+}
+
+/* ---------- shell ---------- */
+function verTab(btn){
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('activa'));
+  btn.classList.add('activa');
+  document.querySelectorAll('.tcont').forEach(c => c.hidden = true);
+  $(btn.dataset.t).hidden = false;
+  if (btn.dataset.t === 't-usuarios') cargarUsuarios();
+}
+async function abrirPanel(){
+  $("v-login").hidden = true; $("v-panel").hidden = false;
+  $("q-usuario").textContent = sesion.usuario;
+  $("q-rol").textContent = sesion.rol;
+  document.querySelectorAll('.tab[data-rol]').forEach(t => {
+    t.hidden = RANGO[sesion.rol] < RANGO[t.dataset.rol];
+  });
+  $("cargando-panel").hidden = false;
+  document.querySelectorAll('.tcont').forEach(c => c.hidden = true);
+  const r = await api('datos').catch(() => null);
+  $("cargando-panel").hidden = true;
+  if (!r || r.error === 'sesion') { sesionVencida(); return; }
+  sesion.rol = r.rol; $("q-rol").textContent = r.rol;
+  pintarCifras(r.metricas || {});
+  pintarMeses(r.codigos_mes || []);
+  document.querySelector('.tab.activa') || document.querySelector('.tab').classList.add('activa');
+  $(document.querySelector('.tab.activa').dataset.t).hidden = false;
+}
+
+/* ---------- cifras ---------- */
+function filaBarra(nombre, clase, valor, max, punto){
+  const pct = Math.round(100 * valor / Math.max(1, max));
+  return '<div class="fila" title="' + nombre + ': ' + valor + '">' +
+    '<div class="nom">' + (punto ? '<i class="' + clase + '"></i>' : '') + nombre + '</div>' +
+    '<div class="pista"><div class="barra ' + clase + '" data-w="' + pct + '%"></div></div>' +
+    '<div class="val">' + valor + '</div></div>';
+}
+function pintarCifras(m){
+  $("c-part").textContent = m.participantes || 0;
+  $("c-circ").textContent = m.circuitos || 0;
+  $("c-cod").textContent = m.entregados || 0;
+  $("c-disp").textContent = m.disponibles || 0;
+  $("c-pend").textContent = m.pendientes || 0;
+  const EST = [[1, 'Movimiento', 'e1'], [2, 'Conexión', 'e2'], [3, 'Bienestar', 'e3'], [4, 'Interacción', 'e4']];
+  $("c-embudo").innerHTML = EST.map(e => filaBarra(e[0] + ' · ' + e[1], e[2], (m.estaciones && m.estaciones[e[0]]) || 0, m.participantes, true)).join('');
+  const ps = (m.parques || []).slice().sort((a, b) => b.participantes - a.participantes);
+  const maxP = Math.max(1, ...ps.map(p => p.participantes));
+  $("c-parques").innerHTML = ps.map(p => filaBarra(p.nombre, 'bp', p.participantes, maxP, false)).join('') || '<p class="nota">Sin parques configurados.</p>';
+  requestAnimationFrame(() => document.querySelectorAll('.barra').forEach(b => { b.style.width = b.dataset.w; }));
+}
+function pintarMeses(lista){
+  $("cod-meses").innerHTML = lista.map(m =>
+    '<tr><td><b>' + m.mes + '</b></td><td class="num">' + m.total + '</td><td class="num">' + m.usados + '</td><td class="num"><b>' + m.libres + '</b></td></tr>'
+  ).join('');
+  $("cod-vacio").hidden = lista.length > 0;
+}
+
+/* ---------- códigos ---------- */
+async function cargarLote(){
+  const mes = $("cg-mes").value;
+  const codigos = $("cg-codigos").value.split(/[\n,;\t]+/).map(c => c.trim()).filter(Boolean);
+  if (!mes) { aviso('cg-msg', 'Elige el mes del lote.', false); return; }
+  if (!codigos.length) { aviso('cg-msg', 'Pega al menos un código.', false); return; }
+  aviso('cg-msg', 'Cargando ' + codigos.length + ' códigos…', true);
+  const r = await api('cargar_codigos', { mes, codigos }).catch(() => ({ error: 'red' }));
+  if (r.error === 'sesion') { sesionVencida(); return; }
+  if (r.ok) {
+    aviso('cg-msg', 'Listo: ' + r.agregados + ' códigos cargados' + (r.duplicados ? ' · ' + r.duplicados + ' repetidos ignorados' : '') + '.', true);
+    $("cg-codigos").value = '';
+    const d = await api('datos'); if (d.codigos_mes) pintarMeses(d.codigos_mes);
+  } else {
+    aviso('cg-msg', 'No se pudo cargar el lote. Revisa el mes y los códigos.', false);
+  }
+}
+
+/* ---------- descargas ---------- */
+async function descargar(tabla){
+  aviso('d-msg', 'Preparando ' + tabla + '.csv…', true);
+  const r = await api('descargar', { tabla }).catch(() => ({ error: 'red' }));
+  if (r.error === 'sesion') { sesionVencida(); return; }
+  if (!r.csv) { aviso('d-msg', 'No se pudo generar el archivo.', false); return; }
+  const url = URL.createObjectURL(new Blob(["﻿" + r.csv], { type: 'text/csv;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = r.nombre || (tabla + '.csv'); a.click();
+  URL.revokeObjectURL(url);
+  aviso('d-msg', 'Descargado: ' + (r.nombre || tabla + '.csv'), true);
+}
+
+/* ---------- usuarios ---------- */
+async function cargarUsuarios(){
+  const r = await api('usuarios').catch(() => ({ error: 'red' }));
+  if (r.error === 'sesion') { sesionVencida(); return; }
+  $("u-lista").innerHTML = (r.usuarios || []).map(u =>
+    '<tr><td><b>' + u.usuario + '</b></td>' +
+    '<td><span class="pill ' + u.rol + '">' + u.rol + '</span></td>' +
+    '<td><span class="pill ' + (u.activo ? 'si' : 'no') + '">' + (u.activo ? 'activo' : 'inactivo') + '</span></td>' +
+    '<td><button class="mini" onclick="editarUsuario(\'' + u.usuario + '\',\'' + u.rol + '\',' + u.activo + ')">editar</button></td></tr>'
+  ).join('');
+}
+function editarUsuario(usuario, rol, activo){
+  $("u-form-tit").textContent = 'Editar: ' + usuario;
+  $("u-usuario").value = usuario; $("u-usuario").readOnly = true;
+  $("u-rol").value = rol; $("u-activo").value = activo ? 'si' : 'no'; $("u-clave").value = '';
+}
+function limpiarFormUsuario(){
+  $("u-form-tit").textContent = 'Crear usuario';
+  $("u-usuario").value = ''; $("u-usuario").readOnly = false;
+  $("u-rol").value = 'lector'; $("u-activo").value = 'si'; $("u-clave").value = '';
+  aviso('u-msg', '');
+}
+async function guardarUsuario(){
+  const usuario = $("u-usuario").value.trim().toLowerCase();
+  if (!usuario) { aviso('u-msg', 'Escribe el nombre de usuario.', false); return; }
+  const r = await api('usuario_guardar', {
+    usuario, rol: $("u-rol").value, activo: $("u-activo").value === 'si', clave: $("u-clave").value
+  }).catch(() => ({ error: 'red' }));
+  if (r.error === 'sesion') { sesionVencida(); return; }
+  if (r.ok) { aviso('u-msg', r.creado ? 'Usuario creado.' : 'Usuario actualizado.', true); limpiarFormUsuario(); cargarUsuarios(); }
+  else if (r.error === 'clave_corta') aviso('u-msg', 'La contraseña debe tener mínimo 8 caracteres.', false);
+  else if (r.error === 'propio') aviso('u-msg', 'No puedes quitarte tu propio rol de superadmin ni desactivarte.', false);
+  else if (r.error === 'usuario') aviso('u-msg', 'Usuario inválido: solo letras minúsculas, números, punto, guion (3-30).', false);
+  else aviso('u-msg', 'No se pudo guardar.', false);
+}
+async function borrarDoc(){
+  const doc = $("b-doc").value.replace(/\D/g, '');
+  if (!doc) { aviso('b-msg', 'Escribe el número de documento.', false); return; }
+  if (!confirm('¿Borrar definitivamente al participante con documento ' + doc + '? Esta acción no se puede deshacer.')) return;
+  const r = await api('borrar_participante', { doc }).catch(() => ({ error: 'red' }));
+  if (r.error === 'sesion') { sesionVencida(); return; }
+  if (r.ok) { aviso('b-msg', 'Participante ' + doc + ' borrado.', true); $("b-doc").value = ''; }
+  else if (r.error === 'no_existe') aviso('b-msg', 'Ese documento no está en la base.', false);
+  else aviso('b-msg', 'No se pudo borrar.', false);
+}
+
+/* ---------- mi cuenta ---------- */
+async function cambiarClave(){
+  const actual = $("p-actual").value, nueva = $("p-nueva").value;
+  if (nueva.length < 8) { aviso('p-msg', 'La nueva contraseña debe tener mínimo 8 caracteres.', false); return; }
+  if (nueva !== $("p-nueva2").value) { aviso('p-msg', 'Las contraseñas no coinciden.', false); return; }
+  const r = await api('clave', { actual, nueva }).catch(() => ({ error: 'red' }));
+  if (r.error === 'sesion') { sesionVencida(); return; }
+  if (r.ok) { aviso('p-msg', 'Contraseña actualizada.', true); $("p-actual").value = $("p-nueva").value = $("p-nueva2").value = ''; }
+  else if (r.error === 'credenciales') aviso('p-msg', 'La contraseña actual no es correcta.', false);
+  else aviso('p-msg', 'No se pudo actualizar.', false);
+}
+
+/* ---------- arranque ---------- */
+if (sesion && sesion.token) abrirPanel();
+</script>
+</body>
+</html>

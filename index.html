@@ -404,6 +404,7 @@ h2{font-family:'Baloo 2';font-size:21px;color:var(--tinta)}
       <button class="btn primario" onclick="ir('v-scan')" id="btn-scan" style="margin-bottom:10px">📷 Escanear QR</button>
       <button class="btn primario" id="btn-premio" disabled onclick="finalizar()">Redime tu premio</button>
     </div>
+    <button class="enlace" onclick="cerrarSesion()" style="display:block;margin:14px auto 0">Cerrar sesión</button>
     <div class="demo-banda" id="demo-banda">
       <small>MODO DEMO · SIMULAR ESCANEO DE QR</small>
       <div class="demo-botones">
@@ -531,6 +532,15 @@ let estado = JSON.parse(localStorage.getItem(KEY) || 'null') || {
 if(!estado.vuelta) estado.vuelta = 1;
 if(!estado.codigos) estado.codigos = [];
 function guardar(){ localStorage.setItem(KEY, JSON.stringify(estado)); }
+
+/* cierra la sesión en este dispositivo; el avance queda guardado en el
+   sistema y se retoma con el número de documento */
+function cerrarSesion(){
+  if(!confirm('¿Cerrar tu sesión en este dispositivo?\nTu avance queda guardado y lo retomas con tu número de documento.')) return;
+  localStorage.removeItem(KEY);
+  estado = { usuario:null, progreso:{1:false,2:false,3:false,4:false}, vuelta:1, codigo:null, codigos:[] };
+  ir('v-splash');
+}
 
 /* timers activos — se limpian al cambiar de paso o de vista */
 let timers = [];
