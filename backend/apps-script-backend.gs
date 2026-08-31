@@ -50,7 +50,8 @@ function instalar() {
   }
   hoja(ss, 'participantes', ['documento','tipo_doc','nombre','correo','genero','nacimiento',
                              'parque_registro','parque_juego','fecha_registro','vuelta',
-                             'progreso','estaciones_ok','circuitos_completos','ultimo_codigo','ultima_actividad']);
+                             'progreso','estaciones_ok','circuitos_completos','ultimo_codigo','ultima_actividad',
+                             'e1_movimiento','e2_conexion','e3_bienestar','e4_interaccion','pendientes']);
   hoja(ss, 'estaciones', ['fecha','documento','parque_qr','parque_juego','estacion','vuelta']);
   hoja(ss, 'codigos', ['codigo','mes','documento','parque_juego','fecha_asignado','valido_hasta']);
   hoja(ss, 'intenciones', ['fecha','documento','intencion','vuelta']);
@@ -58,9 +59,9 @@ function instalar() {
 
 function hoja(ss, nombre, encabezados) {
   var h = ss.getSheetByName(nombre);
-  if (!h) {
-    h = ss.insertSheet(nombre);
-    h.appendRow(encabezados);
+  if (!h) h = ss.insertSheet(nombre);
+  if (encabezados && encabezados.length) {
+    h.getRange(1, 1, 1, encabezados.length).setValues([encabezados]);
     h.setFrozenRows(1);
   }
   return h;
@@ -140,10 +141,17 @@ function registrar(d) {
   var okCount = Object.keys(prog).filter(function(k){ return prog[k]; }).length;
   var ahora = Utilities.formatDate(new Date(), ZONA, 'yyyy-MM-dd HH:mm:ss');
 
+  /* columnas legibles por estación: sí / no + en cuáles quedó pendiente */
+  var NOMBRES = { 1:'Movimiento', 2:'Conexión', 3:'Bienestar', 4:'Interacción' };
+  var porEstacion = [1,2,3,4].map(function(n){ return prog[n] ? 'sí' : 'no'; });
+  var pendientes = [1,2,3,4].filter(function(n){ return !prog[n]; })
+                            .map(function(n){ return NOMBRES[n]; }).join(', ');
+
   if (fila === -1) {
     h.appendRow([doc, d.tipodoc || '', d.nombre || '', d.correo || '', d.genero || '',
                  d.nac || '', d.parque || '', d.parqueJuego || '', ahora,
-                 d.vuelta || 1, progTxt, okCount, 0, '', ahora]);
+                 d.vuelta || 1, progTxt, okCount, 0, '', ahora]
+                .concat(porEstacion).concat([pendientes]));
   } else {
     if (d.nombre) h.getRange(fila, 3).setValue(d.nombre);
     if (d.correo) h.getRange(fila, 4).setValue(d.correo);
@@ -152,6 +160,7 @@ function registrar(d) {
     h.getRange(fila, 11).setValue(progTxt);
     h.getRange(fila, 12).setValue(okCount);
     h.getRange(fila, 15).setValue(ahora);
+    h.getRange(fila, 16, 1, 5).setValues([porEstacion.concat([pendientes])]);
   }
   return { ok: true };
 }
