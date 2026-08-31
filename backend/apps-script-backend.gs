@@ -53,8 +53,9 @@ function instalar() {
                              'progreso','estaciones_ok','circuitos_completos','ultimo_codigo','ultima_actividad',
                              'e1_movimiento','e2_conexion','e3_bienestar','e4_interaccion','pendientes']);
   hoja(ss, 'estaciones', ['fecha','documento','parque_qr','parque_juego','estacion','vuelta']);
-  hoja(ss, 'codigos', ['codigo','mes','documento','parque_juego','fecha_asignado','valido_hasta']);
+  hoja(ss, 'codigos', ['codigo','mes','documento','parque_juego','fecha_asignado','valido_hasta','tipo']);
   hoja(ss, 'intenciones', ['fecha','documento','intencion','vuelta']);
+  hoja(ss, 'redenciones', ['fecha','documento','codigo','parque_juego','valido_hasta','tipo','vuelta']);
   hoja(ss, 'usuarios', ['usuario','hash','sal','rol','activo','creado']);
   hoja(ss, 'sesiones', ['token','usuario','rol','expira']);
   var hu = ss.getSheetByName('usuarios');
@@ -143,12 +144,16 @@ function metricas() {
   var hc = ss.getSheetByName('codigos');
   var cf = hc && hc.getLastRow() > 1 ? hc.getDataRange().getValues().slice(1) : [];
   var mesActual = Utilities.formatDate(new Date(), ZONA, 'yyyy-MM');
-  var entregados = 0, disponibles = 0;
+  var disponibles = 0, modoMes = 'ninguno';
   cf.forEach(function(f) {
-    if (!f[0]) return;
-    if (f[2]) entregados++;
-    else if (normalizarMes(f[1]) === mesActual) disponibles++;
+    if (!f[0] || normalizarMes(f[1]) !== mesActual) return;
+    if (String(f[6] || '').toLowerCase().indexOf('comp') === 0) { modoMes = 'compartido'; return; }
+    if (modoMes === 'ninguno') modoMes = 'unico';
+    if (!f[2]) disponibles++;
   });
+  if (modoMes === 'compartido') disponibles = -1;  /* -1 = ilimitado */
+  var hr0 = ss.getSheetByName('redenciones');
+  var entregados = hr0 && hr0.getLastRow() > 1 ? hr0.getLastRow() - 1 : 0;
 
   var parques = [];
   var hpq = ss.getSheetByName('parques');
@@ -172,6 +177,7 @@ function metricas() {
     estaciones: est,
     pendientes: pendientes,
     parques: parques,
+    modo_mes: modoMes,
     actualizado: Utilities.formatDate(new Date(), ZONA, "yyyy-MM-dd HH:mm")
   };
 }
@@ -259,40 +265,59 @@ function asignarCodigo(d) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var h = hoja(ss, 'codigos', []);
-    var filas = h.getDataRange().getValues();
+    var hr = hoja(ss, 'redenciones', []);
     var mesActual = Utilities.formatDate(new Date(), ZONA, 'yyyy-MM');
 
-    /* 1. ¿cuántos códigos tiene esta cédula este mes? */
+    /* 1. ¿cuántos códigos recibió esta cédula este mes? (log de redenciones) */
     var delMes = 0;
-    for (var i = 1; i < filas.length; i++) {
-      var asignadoA = String(filas[i][2] || '').replace(/\D/g, '');
-      var fechaAsig = String(filas[i][4] || '');
-      if (asignadoA === doc && fechaAsig.indexOf(mesActual) === 0) delMes++;
+    if (hr.getLastRow() > 1) {
+      hr.getDataRange().getValues().slice(1).forEach(function(f) {
+        if (String(f[1] || '').replace(/\D/g, '') === doc && mesDe(f[0]) === mesActual) delMes++;
+      });
     }
     if (delMes >= MAX_CODIGOS_MES) return { error: 'limite_mes' };
 
-    /* 2. primer código libre del mes en curso */
+    var vence = new Date();
+    vence.setMonth(vence.getMonth() + MESES_VIGENCIA);
+    var validoHasta = Utilities.formatDate(vence, ZONA, 'yyyy-MM-dd');
+    var ahora = Utilities.formatDate(new Date(), ZONA, 'yyyy-MM-dd HH:mm:ss');
+    var parque = d.parque_juego || d.parque || '';
+    var filas = h.getDataRange().getValues();
+
+    /* 2. ¿hay código compartido para el mes? lo reciben todos */
+    for (var i = 1; i < filas.length; i++) {
+      if (filas[i][0] && normalizarMes(filas[i][1]) === mesActual &&
+          String(filas[i][6] || '').toLowerCase().indexOf('comp') === 0) {
+        var codC = String(filas[i][0]);
+        hr.appendRow([ahora, "'" + doc, codC, parque, validoHasta, 'compartido', d.vuelta || 1]);
+        marcarCircuito(ss, doc, codC);
+        return { codigo: codC, valido_hasta: validoHasta, compartido: true };
+      }
+    }
+
+    /* 3. primer código único libre del mes en curso */
     for (var j = 1; j < filas.length; j++) {
-      var mes = normalizarMes(filas[j][1]);
-      var libre = !filas[j][2];
-      if (libre && mes === mesActual && filas[j][0]) {
-        var vence = new Date();
-        vence.setMonth(vence.getMonth() + MESES_VIGENCIA);
-        var validoHasta = Utilities.formatDate(vence, ZONA, 'yyyy-MM-dd');
-        var ahora = Utilities.formatDate(new Date(), ZONA, 'yyyy-MM-dd HH:mm:ss');
+      if (filas[j][0] && !filas[j][2] && normalizarMes(filas[j][1]) === mesActual) {
+        var codU = String(filas[j][0]);
         h.getRange(j + 1, 3).setValue("'" + doc);
-        h.getRange(j + 1, 4).setValue(d.parque_juego || d.parque || '');
+        h.getRange(j + 1, 4).setValue(parque);
         h.getRange(j + 1, 5).setValue(ahora);
         h.getRange(j + 1, 6).setValue(validoHasta);
-        /* marca el circuito completo en participantes */
-        marcarCircuito(ss, doc, String(filas[j][0]));
-        return { codigo: String(filas[j][0]), valido_hasta: validoHasta };
+        hr.appendRow([ahora, "'" + doc, codU, parque, validoHasta, 'unico', d.vuelta || 1]);
+        marcarCircuito(ss, doc, codU);
+        return { codigo: codU, valido_hasta: validoHasta };
       }
     }
     return { error: 'agotados' };
   } finally {
     lock.releaseLock();
   }
+}
+
+/* mes (yyyy-MM) de una fecha guardada: Sheets a veces la devuelve como Date */
+function mesDe(v) {
+  if (v instanceof Date) return Utilities.formatDate(v, ZONA, 'yyyy-MM');
+  return String(v || '').slice(0, 7);
 }
 
 /* acepta "2026-09", fechas de celda, "sep-2026", etc. */
@@ -341,6 +366,7 @@ function embellecer() {
   decorarTab(ss, 'estaciones',    CIELO, S_CIELO);
   decorarTab(ss, 'codigos',       SOL,   S_SOL);
   decorarTab(ss, 'intenciones',   LILA,  S_LILA);
+  decorarTab(ss, 'redenciones',   SOL,   S_SOL);
 
   /* semáforos sí/no y pendientes en participantes */
   var hp = ss.getSheetByName('participantes');
@@ -531,14 +557,30 @@ function adminDatos(s) {
   var m = metricas();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var hc = ss.getSheetByName('codigos');
+  var hr = ss.getSheetByName('redenciones');
+  var porCodigo = {};
+  if (hr && hr.getLastRow() > 1) {
+    hr.getDataRange().getValues().slice(1).forEach(function(f) {
+      var c = String(f[2] || '');
+      if (c) porCodigo[c] = (porCodigo[c] || 0) + 1;
+    });
+  }
   var meses = {};
   if (hc && hc.getLastRow() > 1) {
     hc.getDataRange().getValues().slice(1).forEach(function(f) {
       if (!f[0]) return;
       var mes = normalizarMes(f[1]) || 'sin mes';
-      if (!meses[mes]) meses[mes] = { mes: mes, total: 0, usados: 0, libres: 0 };
-      meses[mes].total++;
-      if (f[2]) meses[mes].usados++; else meses[mes].libres++;
+      if (!meses[mes]) meses[mes] = { mes: mes, tipo: 'unico', total: 0, usados: 0, libres: 0, codigo: '' };
+      if (String(f[6] || '').toLowerCase().indexOf('comp') === 0) {
+        meses[mes].tipo = 'compartido';
+        meses[mes].codigo = String(f[0]);
+        meses[mes].total = 1;
+        meses[mes].usados = porCodigo[String(f[0])] || 0;
+        meses[mes].libres = null;
+      } else {
+        meses[mes].total++;
+        if (f[2]) meses[mes].usados++; else meses[mes].libres++;
+      }
     });
   }
   var lista = Object.keys(meses).sort().reverse().map(function(k){ return meses[k]; });
@@ -563,7 +605,7 @@ function cambiarClave(s, d) {
 }
 
 function descargarTabla(d) {
-  var permitidas = ['participantes', 'estaciones', 'codigos', 'intenciones', 'parques'];
+  var permitidas = ['participantes', 'estaciones', 'codigos', 'intenciones', 'parques', 'redenciones'];
   var tabla = String(d.tabla || '');
   if (permitidas.indexOf(tabla) === -1) return { error: 'tabla' };
   var h = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(tabla);
@@ -582,21 +624,41 @@ function descargarTabla(d) {
 function cargarCodigos(d) {
   var mes = String(d.mes || '').trim();
   if (!/^\d{4}-\d{2}$/.test(mes)) return { error: 'mes' };
+  var compartido = (String(d.modo || '') === 'compartido');
   var lista = (d.codigos || []).map(function(c){ return String(c).trim(); }).filter(function(c){ return c; });
   if (!lista.length) return { error: 'vacio' };
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
     var h = hoja(SpreadsheetApp.getActiveSpreadsheet(), 'codigos', []);
-    var existentes = {};
-    h.getDataRange().getValues().slice(1).forEach(function(f){ if (f[0]) existentes[String(f[0]).trim()] = true; });
+    var filas = h.getDataRange().getValues();
+    var existentes = {}, filaComp = -1, hayUnicos = false;
+    for (var i = 1; i < filas.length; i++) {
+      if (!filas[i][0]) continue;
+      existentes[String(filas[i][0]).trim()] = true;
+      if (normalizarMes(filas[i][1]) !== mes) continue;
+      if (String(filas[i][6] || '').toLowerCase().indexOf('comp') === 0) filaComp = i + 1;
+      else hayUnicos = true;
+    }
+    /* un mes es de códigos únicos o de código compartido, nunca mezclado */
+    if (compartido) {
+      if (hayUnicos) return { error: 'mixto' };
+      var cod = lista[0];
+      if (filaComp > 0) {
+        h.getRange(filaComp, 1).setValue(cod);
+        return { ok: true, compartido: true, codigo: cod, reemplazado: true };
+      }
+      h.appendRow([cod, mes, '', '', '', '', 'compartido']);
+      return { ok: true, compartido: true, codigo: cod };
+    }
+    if (filaComp > 0) return { error: 'mixto' };
     var nuevas = [], duplicados = 0;
     lista.forEach(function(c) {
       if (existentes[c]) { duplicados++; return; }
       existentes[c] = true;
-      nuevas.push([c, mes, '', '', '', '']);
+      nuevas.push([c, mes, '', '', '', '', 'unico']);
     });
-    if (nuevas.length) h.getRange(h.getLastRow() + 1, 1, nuevas.length, 6).setValues(nuevas);
+    if (nuevas.length) h.getRange(h.getLastRow() + 1, 1, nuevas.length, 7).setValues(nuevas);
     return { ok: true, agregados: nuevas.length, duplicados: duplicados };
   } finally {
     lock.releaseLock();

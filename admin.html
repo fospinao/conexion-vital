@@ -166,7 +166,7 @@ td.num,th.num{text-align:right}
       <div class="paneles">
         <section class="card">
           <h2>Inventario por mes</h2>
-          <table><thead><tr><th>Mes</th><th class="num">Cargados</th><th class="num">Usados</th><th class="num">Libres</th></tr></thead>
+          <table><thead><tr><th>Mes</th><th>Tipo</th><th class="num">Cargados</th><th class="num">Entregados</th><th class="num">Libres</th></tr></thead>
           <tbody id="cod-meses"></tbody></table>
           <p class="nota" id="cod-vacio" hidden>Aún no hay códigos cargados. Usa el formulario para cargar el lote del mes.</p>
         </section>
@@ -174,11 +174,16 @@ td.num,th.num{text-align:right}
           <h2>Cargar lote del mes</h2>
           <label>Mes al que pertenecen</label>
           <input id="cg-mes" type="month">
-          <label>Códigos (pégalos desde el Excel de WeShop, uno por línea)</label>
+          <label>Tipo de lote</label>
+          <select id="cg-tipo" onchange="cambioTipo()">
+            <option value="unico">Códigos únicos · uno distinto por persona</option>
+            <option value="compartido">Código compartido · el mismo para todo el mes</option>
+          </select>
+          <label id="cg-lbl">Códigos (pégalos desde el Excel de WeShop, uno por línea)</label>
           <textarea id="cg-codigos" rows="8" placeholder="ABC123&#10;DEF456&#10;GHI789"></textarea>
           <button class="btn" style="margin-top:14px" onclick="cargarLote()">Cargar códigos</button>
           <div id="cg-msg"></div>
-          <p class="nota">Los códigos repetidos se ignoran automáticamente. El sistema solo entrega códigos del mes en curso, máximo 2 por cédula al mes, con 2 meses de vigencia.</p>
+          <p class="nota" id="cg-nota">Los códigos repetidos se ignoran automáticamente. El sistema solo entrega códigos del mes en curso, máximo 2 por cédula al mes, con 2 meses de vigencia.</p>
         </section>
       </div>
     </div>
@@ -188,7 +193,8 @@ td.num,th.num{text-align:right}
       <section class="card">
         <h2>Descargar la base de datos <span>· archivos CSV, se abren en Excel</span></h2>
         <div class="desc-fila"><div><b>Participantes</b><small>Base completa: datos de registro, progreso por estación y códigos entregados</small></div><button class="btn sec" onclick="descargar('participantes')">Descargar CSV</button></div>
-        <div class="desc-fila"><div><b>Códigos WeShop</b><small>Todos los códigos cargados, con mes, asignación y vigencia</small></div><button class="btn sec" onclick="descargar('codigos')">Descargar CSV</button></div>
+        <div class="desc-fila"><div><b>Códigos WeShop</b><small>Todos los códigos cargados, con mes, tipo, asignación y vigencia</small></div><button class="btn sec" onclick="descargar('codigos')">Descargar CSV</button></div>
+        <div class="desc-fila"><div><b>Redenciones</b><small>Quién recibió qué código, cuándo y en qué parque (sirve para los dos modos)</small></div><button class="btn sec" onclick="descargar('redenciones')">Descargar CSV</button></div>
         <div class="desc-fila"><div><b>Estaciones</b><small>Log de cada estación completada, con fecha y hora (embudo detallado)</small></div><button class="btn sec" onclick="descargar('estaciones')">Descargar CSV</button></div>
         <div class="desc-fila"><div><b>Intenciones</b><small>Intenciones elegidas en la estación Conexión</small></div><button class="btn sec" onclick="descargar('intenciones')">Descargar CSV</button></div>
         <div id="d-msg"></div>
@@ -330,7 +336,7 @@ function pintarCifras(m){
   $("c-part").textContent = m.participantes || 0;
   $("c-circ").textContent = m.circuitos || 0;
   $("c-cod").textContent = m.entregados || 0;
-  $("c-disp").textContent = m.disponibles || 0;
+  $("c-disp").textContent = (m.disponibles === -1) ? '∞' : (m.disponibles || 0);
   $("c-pend").textContent = m.pendientes || 0;
   const EST = [[1, 'Movimiento', 'e1'], [2, 'Conexión', 'e2'], [3, 'Bienestar', 'e3'], [4, 'Interacción', 'e4']];
   $("c-embudo").innerHTML = EST.map(e => filaBarra(e[0] + ' · ' + e[1], e[2], (m.estaciones && m.estaciones[e[0]]) || 0, m.participantes, true)).join('');
@@ -340,10 +346,24 @@ function pintarCifras(m){
   requestAnimationFrame(() => document.querySelectorAll('.barra').forEach(b => { b.style.width = b.dataset.w; }));
 }
 function pintarMeses(lista){
-  $("cod-meses").innerHTML = lista.map(m =>
-    '<tr><td><b>' + m.mes + '</b></td><td class="num">' + m.total + '</td><td class="num">' + m.usados + '</td><td class="num"><b>' + m.libres + '</b></td></tr>'
-  ).join('');
+  $("cod-meses").innerHTML = lista.map(m => {
+    const comp = m.tipo === 'compartido';
+    return '<tr><td><b>' + m.mes + '</b></td>' +
+      '<td>' + (comp ? '<span class="pill admin" title="' + m.codigo + '">compartido</span>' : '<span class="pill lector">únicos</span>') + '</td>' +
+      '<td class="num">' + (comp ? '1' : m.total) + '</td>' +
+      '<td class="num">' + m.usados + '</td>' +
+      '<td class="num"><b>' + (comp ? '∞' : m.libres) + '</b></td></tr>';
+  }).join('');
   $("cod-vacio").hidden = lista.length > 0;
+}
+
+function cambioTipo(){
+  const comp = $("cg-tipo").value === 'compartido';
+  $("cg-lbl").textContent = comp ? 'El código del mes (uno solo)' : 'Códigos (pégalos desde el Excel de WeShop, uno por línea)';
+  $("cg-codigos").rows = comp ? 2 : 8;
+  $("cg-nota").textContent = comp
+    ? 'Todos los participantes del mes reciben este mismo código. La app igual registra quién lo recibió, cuándo y en qué parque, y sigue aplicando el tope de 2 entregas por cédula al mes.'
+    : 'Los códigos repetidos se ignoran automáticamente. El sistema solo entrega códigos del mes en curso, máximo 2 por cédula al mes, con 2 meses de vigencia.';
 }
 
 /* ---------- códigos ---------- */
@@ -353,12 +373,17 @@ async function cargarLote(){
   if (!mes) { aviso('cg-msg', 'Elige el mes del lote.', false); return; }
   if (!codigos.length) { aviso('cg-msg', 'Pega al menos un código.', false); return; }
   aviso('cg-msg', 'Cargando ' + codigos.length + ' códigos…', true);
-  const r = await api('cargar_codigos', { mes, codigos }).catch(() => ({ error: 'red' }));
+  const tipo = $("cg-tipo").value;
+  const r = await api('cargar_codigos', { mes, codigos, modo: tipo }).catch(() => ({ error: 'red' }));
   if (r.error === 'sesion') { sesionVencida(); return; }
   if (r.ok) {
-    aviso('cg-msg', 'Listo: ' + r.agregados + ' códigos cargados' + (r.duplicados ? ' · ' + r.duplicados + ' repetidos ignorados' : '') + '.', true);
+    aviso('cg-msg', r.compartido
+      ? (r.reemplazado ? 'Código del mes reemplazado: ' : 'Código compartido del mes: ') + r.codigo
+      : 'Listo: ' + r.agregados + ' códigos cargados' + (r.duplicados ? ' · ' + r.duplicados + ' repetidos ignorados' : '') + '.', true);
     $("cg-codigos").value = '';
     const d = await api('datos'); if (d.codigos_mes) pintarMeses(d.codigos_mes);
+  } else if (r.error === 'mixto') {
+    aviso('cg-msg', 'Ese mes ya tiene el otro tipo de lote. Un mes es de códigos únicos o de código compartido, no ambos.', false);
   } else {
     aviso('cg-msg', 'No se pudo cargar el lote. Revisa el mes y los códigos.', false);
   }

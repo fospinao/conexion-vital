@@ -93,7 +93,7 @@ footer b{color:var(--texto)}
     <div class="kpi b1"><div class="et">Participantes</div><div class="num" id="k-part">0</div><div class="sub">personas registradas</div></div>
     <div class="kpi b2"><div class="et">Circuitos completos</div><div class="num" id="k-circ">0</div><div class="sub">recorridos de 4 estaciones</div></div>
     <div class="kpi b3"><div class="et">Códigos entregados</div><div class="num" id="k-cod">0</div><div class="sub">premios We Shop asignados</div></div>
-    <div class="kpi b4"><div class="et">Disponibles este mes</div><div class="num" id="k-disp">0</div><div class="sub">códigos listos para entregar</div></div>
+    <div class="kpi b4"><div class="et">Disponibles este mes</div><div class="num" id="k-disp">0</div><div class="sub" id="k-disp-sub">códigos listos para entregar</div></div>
   </div>
 
   <div class="paneles">
@@ -149,7 +149,13 @@ function pintar(d){
   contar($("k-part"), d.participantes || 0);
   contar($("k-circ"), d.circuitos || 0);
   contar($("k-cod"),  d.entregados || 0);
-  contar($("k-disp"), d.disponibles || 0);
+  if (d.disponibles === -1) {
+    $("k-disp").textContent = '∞'; $("k-disp").dataset.v = 0;
+    $("k-disp-sub").textContent = 'código compartido del mes';
+  } else {
+    contar($("k-disp"), d.disponibles || 0);
+    $("k-disp-sub").textContent = 'códigos listos para entregar';
+  }
   $("k-pend").textContent = d.pendientes || 0;
 
   $("embudo").innerHTML = ESTACIONES.map(e =>
