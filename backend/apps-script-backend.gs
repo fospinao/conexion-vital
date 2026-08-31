@@ -72,6 +72,7 @@ function doGet(e) {
   var accion = (e.parameter.accion || '').toLowerCase();
   if (accion === 'parques')  return json(listaParques());
   if (accion === 'progreso') return json(progreso(e.parameter.doc, e.parameter.parque));
+  if (accion === 'metricas') return json(metricas());
   return json({ ok: true, servicio: 'conexion-vital' });
 }
 
@@ -109,6 +110,62 @@ function progreso(doc, parque) {
     }
   }
   return { existe: false };
+}
+
+/* métricas agregadas para el panel público (sin datos personales) */
+function metricas() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hp = ss.getSheetByName('participantes');
+  var filas = hp && hp.getLastRow() > 1 ? hp.getDataRange().getValues().slice(1) : [];
+  var est = { 1: 0, 2: 0, 3: 0, 4: 0 }, pendientes = 0, circuitos = 0, vueltas = 0;
+  var porParque = {};
+  filas.forEach(function(f) {
+    if (!f[0]) return;
+    var prog = {};
+    try { prog = JSON.parse(f[10] || '{}'); } catch (err) {}
+    var falta = false;
+    [1, 2, 3, 4].forEach(function(n) { if (prog[n]) est[n]++; else falta = true; });
+    if (falta) pendientes++;
+    circuitos += Number(f[12]) || 0;
+    vueltas += Number(f[9]) || 1;
+    var p = String(f[7] || f[6] || '').trim().toLowerCase() || 'otro';
+    porParque[p] = (porParque[p] || 0) + 1;
+  });
+
+  var hc = ss.getSheetByName('codigos');
+  var cf = hc && hc.getLastRow() > 1 ? hc.getDataRange().getValues().slice(1) : [];
+  var mesActual = Utilities.formatDate(new Date(), ZONA, 'yyyy-MM');
+  var entregados = 0, disponibles = 0;
+  cf.forEach(function(f) {
+    if (!f[0]) return;
+    if (f[2]) entregados++;
+    else if (normalizarMes(f[1]) === mesActual) disponibles++;
+  });
+
+  var parques = [];
+  var hpq = ss.getSheetByName('parques');
+  if (hpq && hpq.getLastRow() > 1) {
+    hpq.getDataRange().getValues().slice(1).forEach(function(f) {
+      if (!f[0]) return;
+      var id = String(f[0]).trim().toLowerCase();
+      parques.push({ id: id, nombre: String(f[1]).trim(), participantes: porParque[id] || 0 });
+      delete porParque[id];
+    });
+  }
+  Object.keys(porParque).forEach(function(id) {
+    parques.push({ id: id, nombre: id.toUpperCase(), participantes: porParque[id] });
+  });
+
+  return {
+    participantes: filas.filter(function(f){ return f[0]; }).length,
+    circuitos: circuitos,
+    entregados: entregados,
+    disponibles: disponibles,
+    estaciones: est,
+    pendientes: pendientes,
+    parques: parques,
+    actualizado: Utilities.formatDate(new Date(), ZONA, "yyyy-MM-dd HH:mm")
+  };
 }
 
 /* ================================ POST ================================ */
