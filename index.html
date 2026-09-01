@@ -769,7 +769,9 @@ function marcaParque(id){
       if(cfg.logo) chip.innerHTML = '<img src="'+cfg.logo+'" alt="'+(cfg.nombre||'')+'" style="height:26px;display:block">';
     }).catch(()=>{});
 }
-(function init(){
+/* El arranque corre al final de la carga: así abrirEstacion ya tiene todo definido
+   cuando alguien llega con ?estacion= en la URL (escaneo con la cámara del celular). */
+window.addEventListener('DOMContentLoaded', function init(){
   marcaParque(CONFIG.parque);
   /* desplegable de parques: arranca con los embebidos y se actualiza
      desde la pestaña "parques" del Google Sheet (parques nuevos aparecen solos) */
@@ -784,7 +786,7 @@ function marcaParque(id){
     if(estacionPendiente){ const e=estacionPendiente; estacionPendiente=null; abrirEstacion(e); }
     else ir('v-pasaporte');
   } else ir('v-splash');
-})();
+});
 
 /* =====================================================================
    REGISTRO Y RECUPERACIÓN
