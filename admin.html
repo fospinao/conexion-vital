@@ -39,6 +39,7 @@ label{font-size:11.5px;font-weight:700;color:var(--texto2);text-transform:upperc
 .login-card p{font-size:12.5px;color:var(--texto2);margin-top:4px;margin-bottom:8px}
 .login-card form{text-align:left}
 .login-card .btn{width:100%;margin-top:18px}
+.login-card .ayuda{font-size:12.5px;color:var(--texto2);margin:0 0 4px;text-align:left}
 
 /* ---------- shell ---------- */
 #v-panel header{background:linear-gradient(135deg,var(--tinta) 0%,var(--tinta-osc) 100%);color:#fff;padding:16px 22px}
@@ -114,13 +115,32 @@ code.cod{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;
     <img src="assets/logo-cv-azul.png" alt="Conexión Vital">
     <h1>CENTRO DE ADMINISTRACIÓN</h1>
     <p>Programa Activar · Fundación Postobón</p>
-    <form onsubmit="hacerLogin(event)">
+    <form id="f-login" onsubmit="hacerLogin(event)">
       <label>Usuario</label>
       <input id="l-usuario" autocomplete="username" required>
       <label>Contraseña</label>
       <input id="l-clave" type="password" autocomplete="current-password" required>
       <button class="btn" id="l-btn" type="submit">Ingresar</button>
+      <button type="button" class="mini" style="display:block;margin:14px auto 0" onclick="verPantalla('olvide')">¿Olvidaste tu contraseña?</button>
     </form>
+
+    <form id="f-olvide" hidden onsubmit="pedirReset(event)">
+      <p class="ayuda">Te enviamos un enlace al correo registrado para que crees una contraseña nueva.</p>
+      <label>Tu usuario</label>
+      <input id="o-usuario" autocomplete="username">
+      <button class="btn" id="o-btn" type="submit">Enviarme el enlace</button>
+      <button type="button" class="mini" style="display:block;margin:14px auto 0" onclick="verPantalla('login')">Volver</button>
+    </form>
+
+    <form id="f-reset" hidden onsubmit="guardarReset(event)">
+      <p class="ayuda">Crea tu contraseña nueva.</p>
+      <label>Nueva contraseña (mín. 8 caracteres)</label>
+      <input id="r-clave" type="password" autocomplete="new-password">
+      <label>Repítela</label>
+      <input id="r-clave2" type="password" autocomplete="new-password">
+      <button class="btn" id="r-btn" type="submit">Guardar y entrar</button>
+    </form>
+
     <div id="l-msg"></div>
   </div>
 </div>
@@ -234,6 +254,8 @@ code.cod{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;
           <h2 id="u-form-tit">Crear usuario</h2>
           <label>Usuario</label>
           <input id="u-usuario" placeholder="ej: maria.fundacion">
+          <label>Correo <span style="text-transform:none;font-weight:400">(para poder recuperar la contraseña)</span></label>
+          <input id="u-correo" type="email" placeholder="ej: maria@fundacionpostobon.org">
           <div class="grid2">
             <div><label>Rol</label>
               <select id="u-rol">
@@ -476,24 +498,47 @@ async function descargar(tabla){
 }
 
 /* ---------- usuarios ---------- */
+let listaUsuarios = [];
+
 async function cargarUsuarios(){
   const r = await api('usuarios').catch(() => ({ error: 'red' }));
   if (r.error === 'sesion') { sesionVencida(); return; }
-  $("u-lista").innerHTML = (r.usuarios || []).map(u =>
-    '<tr><td><b>' + u.usuario + '</b></td>' +
+  listaUsuarios = r.usuarios || [];
+  $("u-lista").innerHTML = listaUsuarios.map((u, i) =>
+    '<tr><td><b>' + u.usuario + '</b>' +
+      (u.correo
+        ? '<small style="display:block;font-weight:400;color:var(--texto2)">' + u.correo + '</small>'
+        : '<small style="display:block;font-weight:400;color:var(--sol)">sin correo · no puede recuperar contraseña</small>') +
+    '</td>' +
     '<td><span class="pill ' + u.rol + '">' + u.rol + '</span></td>' +
     '<td><span class="pill ' + (u.activo ? 'si' : 'no') + '">' + (u.activo ? 'activo' : 'inactivo') + '</span></td>' +
-    '<td><button class="mini" onclick="editarUsuario(\'' + u.usuario + '\',\'' + u.rol + '\',' + u.activo + ')">editar</button></td></tr>'
+    '<td style="white-space:nowrap"><button class="mini" onclick="editarUsuario(' + i + ')">editar</button>' +
+    ' · <button class="mini" style="color:var(--rojo)" onclick="borrarUsuario(' + i + ')">eliminar</button></td></tr>'
   ).join('');
 }
-function editarUsuario(usuario, rol, activo){
-  $("u-form-tit").textContent = 'Editar: ' + usuario;
-  $("u-usuario").value = usuario; $("u-usuario").readOnly = true;
-  $("u-rol").value = rol; $("u-activo").value = activo ? 'si' : 'no'; $("u-clave").value = '';
+function editarUsuario(i){
+  const u = listaUsuarios[i]; if (!u) return;
+  $("u-form-tit").textContent = 'Editar: ' + u.usuario;
+  $("u-usuario").value = u.usuario; $("u-usuario").readOnly = true;
+  $("u-correo").value = u.correo || '';
+  $("u-rol").value = u.rol; $("u-activo").value = u.activo ? 'si' : 'no'; $("u-clave").value = '';
+  aviso('u-msg', '');
+}
+async function borrarUsuario(i){
+  const u = listaUsuarios[i]; if (!u) return;
+  if (!confirm('¿Eliminar al usuario "' + u.usuario + '" del panel?\n\nPierde el acceso de inmediato. Esto NO borra participantes ni datos del programa.')) return;
+  const r = await api('usuario_borrar', { usuario: u.usuario }).catch(() => ({ error: 'red' }));
+  if (r.error === 'sesion') { sesionVencida(); return; }
+  if (r.ok) { aviso('u-msg', 'Usuario ' + u.usuario + ' eliminado.', true); limpiarFormUsuario(); cargarUsuarios(); }
+  else if (r.error === 'propio') aviso('u-msg', 'No puedes eliminarte a ti mismo.', false);
+  else if (r.error === 'ultimo_super') aviso('u-msg', 'Es el único superadmin activo: crea otro antes de eliminarlo.', false);
+  else if (r.error === 'no_existe') aviso('u-msg', 'Ese usuario ya no existe.', false);
+  else aviso('u-msg', 'No se pudo eliminar.', false);
 }
 function limpiarFormUsuario(){
   $("u-form-tit").textContent = 'Crear usuario';
   $("u-usuario").value = ''; $("u-usuario").readOnly = false;
+  $("u-correo").value = '';
   $("u-rol").value = 'lector'; $("u-activo").value = 'si'; $("u-clave").value = '';
   aviso('u-msg', '');
 }
@@ -501,13 +546,15 @@ async function guardarUsuario(){
   const usuario = $("u-usuario").value.trim().toLowerCase();
   if (!usuario) { aviso('u-msg', 'Escribe el nombre de usuario.', false); return; }
   const r = await api('usuario_guardar', {
-    usuario, rol: $("u-rol").value, activo: $("u-activo").value === 'si', clave: $("u-clave").value
+    usuario, rol: $("u-rol").value, activo: $("u-activo").value === 'si',
+    clave: $("u-clave").value, correo: $("u-correo").value
   }).catch(() => ({ error: 'red' }));
   if (r.error === 'sesion') { sesionVencida(); return; }
   if (r.ok) { aviso('u-msg', r.creado ? 'Usuario creado.' : 'Usuario actualizado.', true); limpiarFormUsuario(); cargarUsuarios(); }
   else if (r.error === 'clave_corta') aviso('u-msg', 'La contraseña debe tener mínimo 8 caracteres.', false);
   else if (r.error === 'propio') aviso('u-msg', 'No puedes quitarte tu propio rol de superadmin ni desactivarte.', false);
   else if (r.error === 'usuario') aviso('u-msg', 'Usuario inválido: solo letras minúsculas, números, punto, guion (3-30).', false);
+  else if (r.error === 'correo') aviso('u-msg', 'Ese correo no parece válido.', false);
   else aviso('u-msg', 'No se pudo guardar.', false);
 }
 async function borrarDoc(){
@@ -533,8 +580,48 @@ async function cambiarClave(){
   else aviso('p-msg', 'No se pudo actualizar.', false);
 }
 
+/* ---------- recuperar contraseña ---------- */
+let tokenReset = new URLSearchParams(location.search).get('reset');
+
+function verPantalla(cual){
+  $("f-login").hidden  = cual !== 'login';
+  $("f-olvide").hidden = cual !== 'olvide';
+  $("f-reset").hidden  = cual !== 'reset';
+  aviso('l-msg', '');
+}
+async function pedirReset(ev){
+  ev.preventDefault();
+  const usuario = $("o-usuario").value.trim();
+  if (!usuario) { aviso('l-msg', 'Escribe tu usuario.', false); return; }
+  $("o-btn").disabled = true;
+  await post({ tipo: 'recuperar', usuario }).catch(() => null);
+  $("o-btn").disabled = false;
+  aviso('l-msg', 'Si ese usuario existe y tiene un correo registrado, le enviamos el enlace. Revisa tu bandeja y la carpeta de spam.', true);
+}
+async function guardarReset(ev){
+  ev.preventDefault();
+  const c = $("r-clave").value;
+  if (c.length < 8) { aviso('l-msg', 'La contraseña debe tener mínimo 8 caracteres.', false); return; }
+  if (c !== $("r-clave2").value) { aviso('l-msg', 'Las contraseñas no coinciden.', false); return; }
+  $("r-btn").disabled = true;
+  const r = await post({ tipo: 'reset', token: tokenReset, clave: c }).catch(() => ({ error: 'red' }));
+  $("r-btn").disabled = false;
+  if (r.ok) {
+    history.replaceState(null, '', location.pathname);
+    tokenReset = null;
+    verPantalla('login');
+    $("l-usuario").value = r.usuario || '';
+    aviso('l-msg', 'Contraseña actualizada. Ya puedes ingresar.', true);
+  } else if (r.error === 'clave_corta') {
+    aviso('l-msg', 'La contraseña debe tener mínimo 8 caracteres.', false);
+  } else {
+    aviso('l-msg', 'Ese enlace ya venció o no es válido. Pide uno nuevo desde "¿Olvidaste tu contraseña?".', false);
+  }
+}
+
 /* ---------- arranque ---------- */
-if (sesion && sesion.token) abrirPanel();
+if (tokenReset) verPantalla('reset');
+else if (sesion && sesion.token) abrirPanel();
 </script>
 </body>
 </html>

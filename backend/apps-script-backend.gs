@@ -56,8 +56,9 @@ function instalar() {
   hoja(ss, 'codigos', ['codigo','mes','documento','parque_juego','fecha_asignado','valido_hasta','tipo']);
   hoja(ss, 'intenciones', ['fecha','documento','intencion','vuelta']);
   hoja(ss, 'redenciones', ['fecha','documento','codigo','parque_juego','valido_hasta','tipo','vuelta']);
-  hoja(ss, 'usuarios', ['usuario','hash','sal','rol','activo','creado']);
+  hoja(ss, 'usuarios', ['usuario','hash','sal','rol','activo','creado','correo']);
   hoja(ss, 'sesiones', ['token','usuario','rol','expira']);
+  hoja(ss, 'resets', ['token','usuario','expira']);
   var hu = ss.getSheetByName('usuarios');
   if (hu.getLastRow() < 2) {
     var sal = Utilities.getUuid();
@@ -194,6 +195,8 @@ function doPost(e) {
   if (tipo === 'intencion') return json(guardarIntencion(d));
   if (tipo === 'reinicio')  return json(registrar(d)); // el reinicio actualiza vuelta y progreso
   if (tipo === 'login')     return json(login(d));
+  if (tipo === 'recuperar') return json(recuperarClave(d));
+  if (tipo === 'reset')     return json(aplicarReset(d));
   if (tipo === 'admin')     return json(adminRouter(d));
   return json({ error: 'tipo desconocido' });
 }
@@ -367,6 +370,7 @@ function embellecer() {
   decorarTab(ss, 'codigos',       SOL,   S_SOL);
   decorarTab(ss, 'intenciones',   LILA,  S_LILA);
   decorarTab(ss, 'redenciones',   SOL,   S_SOL);
+  decorarTab(ss, 'usuarios',      TINTA, HIELO);
 
   /* semáforos sí/no y pendientes en participantes */
   var hp = ss.getSheetByName('participantes');
@@ -484,6 +488,9 @@ function tarjeta(d, rLabel, rNum, texto, formula, fondo, colorNum) {
    lector (solo cifras). Las sesiones duran 12 horas. */
 
 var SESION_HORAS = 12;
+var RESET_MINUTOS = 60;
+/* a dónde apunta el enlace de recuperación (cambiar si cambia el dominio) */
+var URL_PANEL = 'https://fospinao.github.io/conexion-vital/admin.html';
 
 function hashClave(clave, sal) {
   var raw = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, sal + '|' + clave, Utilities.Charset.UTF_8);
@@ -550,6 +557,7 @@ function adminRouter(d) {
   if (accion === 'codigos_detalle')    return esAdmin ? codigosDetalle(d) : { error: 'permiso' };
   if (accion === 'usuarios')           return esSuper ? usuariosLista() : { error: 'permiso' };
   if (accion === 'usuario_guardar')    return esSuper ? usuarioGuardar(s, d) : { error: 'permiso' };
+  if (accion === 'usuario_borrar')     return esSuper ? usuarioBorrar(s, d) : { error: 'permiso' };
   if (accion === 'borrar_participante')return esSuper ? borrarParticipante(d) : { error: 'permiso' };
   return { error: 'accion' };
 }
@@ -721,7 +729,8 @@ function usuariosLista() {
   if (!hu || hu.getLastRow() < 2) return { usuarios: [] };
   return { usuarios: hu.getDataRange().getValues().slice(1).filter(function(f){ return f[0]; }).map(function(f) {
     return { usuario: String(f[0]), rol: String(f[3]), activo: String(f[4]).toLowerCase().indexOf('s') === 0,
-             creado: f[5] instanceof Date ? Utilities.formatDate(f[5], ZONA, 'yyyy-MM-dd') : String(f[5]).slice(0, 10) };
+             creado: f[5] instanceof Date ? Utilities.formatDate(f[5], ZONA, 'yyyy-MM-dd') : String(f[5]).slice(0, 10),
+             correo: String(f[6] || '').trim() };
   }) };
 }
 
@@ -730,7 +739,9 @@ function usuarioGuardar(s, d) {
   var rol = String(d.rol || '');
   var activo = d.activo === false ? 'no' : 'si';
   var clave = String(d.clave || '');
+  var correo = String(d.correo || '').trim();
   if (!/^[a-z0-9._-]{3,30}$/.test(usuario)) return { error: 'usuario' };
+  if (correo && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)) return { error: 'correo' };
   if (['superadmin', 'admin', 'lector'].indexOf(rol) === -1) return { error: 'rol' };
   if (usuario === s.usuario && (rol !== 'superadmin' || activo === 'no')) return { error: 'propio' };
   var hu = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('usuarios');
@@ -739,6 +750,7 @@ function usuarioGuardar(s, d) {
     if (String(filas[i][0]).trim().toLowerCase() === usuario) {
       hu.getRange(i + 1, 4).setValue(rol);
       hu.getRange(i + 1, 5).setValue(activo);
+      hu.getRange(i + 1, 7).setValue(correo);
       if (clave) {
         if (clave.length < 8) return { error: 'clave_corta' };
         var sal = Utilities.getUuid();
@@ -751,8 +763,115 @@ function usuarioGuardar(s, d) {
   if (clave.length < 8) return { error: 'clave_corta' };
   var sal2 = Utilities.getUuid();
   hu.appendRow([usuario, hashClave(clave, sal2), sal2, rol, activo,
-                Utilities.formatDate(new Date(), ZONA, 'yyyy-MM-dd HH:mm:ss')]);
+                Utilities.formatDate(new Date(), ZONA, 'yyyy-MM-dd HH:mm:ss'), correo]);
   return { ok: true, creado: true };
+}
+
+/* elimina un usuario del panel (no toca participantes) */
+function usuarioBorrar(s, d) {
+  var usuario = String(d.usuario || '').trim().toLowerCase();
+  if (!usuario) return { error: 'usuario' };
+  if (usuario === s.usuario) return { error: 'propio' };
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hu = ss.getSheetByName('usuarios');
+  if (!hu) return { error: 'no_existe' };
+  var filas = hu.getDataRange().getValues();
+  var supersActivos = 0, fila = -1;
+  for (var i = 1; i < filas.length; i++) {
+    var u = String(filas[i][0]).trim().toLowerCase();
+    if (!u) continue;
+    if (String(filas[i][3]) === 'superadmin' &&
+        String(filas[i][4]).toLowerCase().indexOf('s') === 0) supersActivos++;
+    if (u === usuario) fila = i + 1;
+  }
+  if (fila === -1) return { error: 'no_existe' };
+  if (String(filas[fila - 1][3]) === 'superadmin' && supersActivos <= 1) return { error: 'ultimo_super' };
+  hu.deleteRow(fila);
+  /* cierra las sesiones abiertas de ese usuario */
+  var hs = ss.getSheetByName('sesiones');
+  if (hs && hs.getLastRow() > 1) {
+    var fs = hs.getDataRange().getValues();
+    for (var k = fs.length - 1; k >= 1; k--) {
+      if (String(fs[k][1]).trim().toLowerCase() === usuario) hs.deleteRow(k + 1);
+    }
+  }
+  return { ok: true };
+}
+
+/* ============== RECUPERAR CONTRASEÑA (enlace por correo) ==============
+   No se envía nunca una contraseña por email: se manda un enlace de un
+   solo uso que vence en una hora, y la persona escribe la suya. */
+function recuperarClave(d) {
+  var usuario = String(d.usuario || '').trim().toLowerCase();
+  var respuesta = { ok: true };   /* siempre igual: no revela si el usuario existe */
+  if (!usuario) return respuesta;
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hu = ss.getSheetByName('usuarios');
+  if (!hu) return respuesta;
+  var filas = hu.getDataRange().getValues();
+  for (var i = 1; i < filas.length; i++) {
+    if (String(filas[i][0]).trim().toLowerCase() !== usuario) continue;
+    if (String(filas[i][4]).toLowerCase().indexOf('s') !== 0) return respuesta;  /* inactivo */
+    var correo = String(filas[i][6] || '').trim();
+    if (!correo) return respuesta;                                              /* sin correo */
+    var hr = hoja(ss, 'resets', []);
+    limpiarResets(hr);
+    var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+    hr.appendRow([token, usuario, Date.now() + RESET_MINUTOS * 60000]);
+    MailApp.sendEmail({
+      to: correo,
+      subject: 'Conexión Vital · restablecer tu contraseña',
+      htmlBody:
+        '<div style="font-family:Arial,Helvetica,sans-serif;color:#123A5C;line-height:1.6;max-width:520px">' +
+        '<p>Hola,</p>' +
+        '<p>Recibimos una solicitud para restablecer la contraseña del usuario <b>' + usuario +
+        '</b> en el Centro de Administración de <b>Conexión Vital</b>.</p>' +
+        '<p style="margin:26px 0"><a href="' + URL_PANEL + '?reset=' + token + '" ' +
+        'style="background:#123A5C;color:#ffffff;padding:13px 24px;border-radius:9px;' +
+        'text-decoration:none;font-weight:bold;display:inline-block">Crear una contraseña nueva</a></p>' +
+        '<p style="font-size:13px;color:#5A7186">El enlace vence en ' + RESET_MINUTOS +
+        ' minutos y sirve una sola vez. Si no fuiste tú, ignora este correo: tu contraseña actual sigue funcionando.</p>' +
+        '<p style="font-size:12px;color:#8A99A8;margin-top:26px">Programa Activar · Fundación Postobón</p></div>'
+    });
+    return respuesta;
+  }
+  return respuesta;
+}
+
+function limpiarResets(hr) {
+  if (hr.getLastRow() < 2) return;
+  var filas = hr.getDataRange().getValues();
+  for (var i = filas.length - 1; i >= 1; i--) {
+    if (Number(filas[i][2]) < Date.now()) hr.deleteRow(i + 1);
+  }
+}
+
+function aplicarReset(d) {
+  var token = String(d.token || '');
+  var clave = String(d.clave || '');
+  if (clave.length < 8) return { error: 'clave_corta' };
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hr = ss.getSheetByName('resets');
+  if (!hr || hr.getLastRow() < 2) return { error: 'token' };
+  var filas = hr.getDataRange().getValues();
+  for (var i = 1; i < filas.length; i++) {
+    if (String(filas[i][0]) !== token) continue;
+    if (Number(filas[i][2]) < Date.now()) { hr.deleteRow(i + 1); return { error: 'token' }; }
+    var usuario = String(filas[i][1]).trim().toLowerCase();
+    var hu = ss.getSheetByName('usuarios');
+    var fu = hu.getDataRange().getValues();
+    for (var j = 1; j < fu.length; j++) {
+      if (String(fu[j][0]).trim().toLowerCase() === usuario) {
+        var sal = Utilities.getUuid();
+        hu.getRange(j + 1, 2).setValue(hashClave(clave, sal));
+        hu.getRange(j + 1, 3).setValue(sal);
+        hr.deleteRow(i + 1);
+        return { ok: true, usuario: usuario };
+      }
+    }
+    return { error: 'token' };
+  }
+  return { error: 'token' };
 }
 
 function borrarParticipante(d) {
