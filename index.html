@@ -64,6 +64,8 @@ h2{font-family:'Baloo 2';font-size:21px;color:var(--tinta)}
 .campo.fijo select{background:#EEF6FC;border-color:#CFE4F4;color:#3A5C7A;-webkit-appearance:none;appearance:none}
 .campo .pista-qr{display:block;margin-top:5px;font-size:12px;font-weight:700;color:#7C99B4}
 .campo .pista-qr::before{content:"\1F4CD";margin-right:5px}
+.campo .pista-qr.alerta{color:var(--rojo)}
+.campo .pista-qr.alerta::before{content:"\26A0\FE0F"}
 .checks{margin-top:16px;display:flex;flex-direction:column;gap:10px}
 .check{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.4;color:#3D5F80}
 .check input{width:20px;height:20px;margin-top:1px;accent-color:var(--azul-1);flex-shrink:0}
@@ -721,9 +723,15 @@ function pintarParques(lista){
   const campo = document.getElementById('c-parque');
   campo.classList.toggle('fijo', fijo);
   let pista = campo.querySelector('.pista-qr');
+  const crear = ()=>{ if(!pista){ pista = document.createElement('small'); campo.appendChild(pista); } return pista; };
   if(fijo){
-    if(!pista){ pista = document.createElement('small'); pista.className = 'pista-qr'; campo.appendChild(pista); }
+    crear().className = 'pista-qr';
     pista.textContent = 'Detectado por el QR de la sede';
+  } else if(CONFIG.parqueQR){
+    /* el QR trae una sede que no está activa en la base: se avisa en vez de fallar callado */
+    crear().className = 'pista-qr alerta';
+    pista.textContent = 'El QR trae una sede que no está activa ("' + CONFIG.parqueQR +
+      '"). Escoge la tuya en la lista y avísale al equipo del parque.';
   } else if(pista){ pista.remove(); }
 }
 
