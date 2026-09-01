@@ -437,6 +437,7 @@ h2{font-family:'Baloo 2';font-size:21px;color:var(--tinta)}
       <div class="scan-guia"><div></div></div>
     </div>
     <div class="scan-estado" id="scan-estado">Iniciando cámara…</div>
+    <button class="btn primario oculto" id="scan-reintentar" onclick="iniciarScanner()" style="margin-top:12px">Intentar de nuevo</button>
     <canvas id="scan-canvas" class="oculto"></canvas>
   </section>
 
@@ -910,8 +911,22 @@ function pintarPasaporte(){
 /* =====================================================================
    ESCÁNER QR (jsQR + getUserMedia — requiere HTTPS)
    ===================================================================== */
+function vigilarPermisoCamara(){
+  /* Si la persona da el permiso después del error (o alguien del equipo se lo
+     activa), la cámara arranca sola sin tener que salir y volver a entrar. */
+  if(vigilarPermisoCamara.listo || !navigator.permissions?.query) return;
+  vigilarPermisoCamara.listo = true;
+  navigator.permissions.query({ name:'camera' }).then(p=>{
+    p.onchange = ()=>{
+      const enScan = document.getElementById('v-scan').classList.contains('activa');
+      if(p.state==='granted' && enScan && !streamCam) iniciarScanner();
+    };
+  }).catch(()=>{});
+}
 function iniciarScanner(){
   const estadoEl = document.getElementById('scan-estado');
+  document.getElementById('scan-reintentar').classList.add('oculto');
+  vigilarPermisoCamara();
   const hayNativo = ('BarcodeDetector' in window);
   const hayLibreria = (typeof jsQR !== 'undefined');
   if(!hayNativo && !hayLibreria){
@@ -964,8 +979,15 @@ function iniciarScanner(){
       }
       scanLoop = requestAnimationFrame(tick);
     })
-    .catch(()=>{
-      estadoEl.textContent = 'No pudimos acceder a la cámara. Revisa el permiso, o escanea el QR con la cámara nativa del celular.';
+    .catch(err=>{
+      document.getElementById('scan-reintentar').classList.remove('oculto');
+      if(err && (err.name==='NotAllowedError' || err.name==='SecurityError')){
+        estadoEl.textContent = 'Para escanear aquí, toca "Intentar de nuevo" y elige "Permitir" cuando el celular pregunte. O más fácil: escanea el QR del tótem con la cámara normal del celular.';
+      } else if(err && err.name==='NotReadableError'){
+        estadoEl.textContent = 'Otra app está usando la cámara. Ciérrala y toca "Intentar de nuevo".';
+      } else {
+        estadoEl.textContent = 'No pudimos abrir la cámara. Escanea el QR del tótem con la cámara normal del celular: funciona igual.';
+      }
     });
 }
 function interpretarQR(texto){
