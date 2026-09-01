@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Estudio de video · Conexión Vital</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#EAF6FE;color:#123A5C;margin:0;padding:30px 20px;display:flex;flex-direction:column;align-items:center}
+h1{font-size:24px;margin-bottom:4px}
+p.nota{color:#4A6B8A;margin:4px 0 20px;text-align:center;max-width:640px;line-height:1.5}
+.panel{background:#fff;border-radius:18px;padding:20px 24px;max-width:760px;width:100%;box-sizing:border-box;
+  box-shadow:0 6px 18px rgba(14,95,168,.12);margin-bottom:20px}
+.panel h2{font-size:17px;margin:0 0 10px}
+label{font-size:13px;color:#4A6B8A;font-weight:700;display:block;margin:10px 0 4px}
+input,select,textarea{width:100%;box-sizing:border-box;padding:11px 14px;border:2px solid #B9DCF5;border-radius:12px;
+  font-size:14px;background:#fff;color:#123A5C;font-family:inherit}
+textarea{min-height:110px;resize:vertical;line-height:1.45}
+.fila{display:flex;gap:12px;flex-wrap:wrap}
+.fila>div{flex:1;min-width:200px}
+button{padding:11px 22px;border:none;border-radius:12px;background:#1B87D4;color:#fff;font-weight:700;font-size:15px;cursor:pointer}
+button:hover{filter:brightness(1.06)}
+button:disabled{background:#9DC6E8;cursor:wait}
+button.claro{background:#fff;color:#1B87D4;border:2px solid #B9DCF5}
+.estado{font-size:13.5px;color:#4A6B8A;margin-top:10px;line-height:1.5;word-break:break-word}
+.estado.error{color:#C0392B;font-weight:700}
+.estado.ok{color:#1E8E5A;font-weight:700}
+video{width:100%;border-radius:12px;margin-top:12px;background:#000}
+.desc{font-size:13px;color:#7C99B4;margin:2px 0 0}
+.costo{font-size:12px;color:#7C99B4;margin-top:6px}
+a.descarga{display:inline-block;margin-top:10px;font-weight:700;color:#1B87D4}
+img.ref{width:90px;border-radius:12px;float:right;margin:0 0 8px 12px;background:#fff}
+</style>
+</head>
+<body>
+<h1>Estudio de video · Conexión Vital</h1>
+<p class="nota">Genera los clips de la <b>mamá Vital</b> con Veo (Google). Tu llave de API se usa solo desde este navegador:
+no se envía a ningún lado distinto de Google ni queda guardada al cerrar la pestaña.</p>
+
+<div class="panel">
+  <h2>1 · Conexión con Google</h2>
+  <label>Llave de API (de aistudio.google.com)</label>
+  <input id="clave" type="password" placeholder="Pega aquí tu llave de API" autocomplete="off">
+  <div class="fila">
+    <div>
+      <label>Calidad</label>
+      <select id="modelo">
+        <option value="veo-3.1-fast-generate-preview">Rápida · ~US$1,20 por clip (para pruebas)</option>
+        <option value="veo-3.1-generate-preview">Estándar · ~US$3,20 por clip (para la versión final)</option>
+      </select>
+    </div>
+    <div>
+      <label>Resolución</label>
+      <select id="resolucion">
+        <option value="720p">720p (suficiente para la app)</option>
+        <option value="1080p">1080p</option>
+      </select>
+    </div>
+  </div>
+  <p class="costo">Cada clic en "Generar" cobra un clip a tu cuenta de Google, salga bueno o no. Empieza en calidad rápida.</p>
+</div>
+
+<div id="clips"></div>
+
+<script>
+const BASE = 'https://generativelanguage.googleapis.com/v1beta';
+const CLIPS = [
+  { id:1, nombre:'Saludo', archivo:'conexion-vital-clip1-saludo.mp4', prompt:
+`Anima a la mujer de la imagen adjunta exactamente como es: personaje 3D estilo película animada, latina, cabello negro largo y ondulado, sudadera deportiva lila con líneas blancas, tenis blancos. Está de pie en un parque soleado con árboles y cielo azul claro. Plano medio, cámara fija a la altura de los ojos. Sonríe cálidamente, saluda con la mano y dice con voz femenina alegre y acento colombiano: "¡Hola! Soy la mamá Vital. Bienvenido a la estación Conexión. Respira conmigo." Movimiento natural y suave, iluminación de día. Sin subtítulos ni textos en pantalla.` },
+  { id:2, nombre:'Respiración guiada', archivo:'conexion-vital-clip2-respiracion.mp4', prompt:
+`La misma mujer 3D de la imagen adjunta (sudadera lila, cabello negro ondulado), en el mismo parque soleado, plano medio, cámara fija. Lleva las manos al pecho, inhala profundo levantando suavemente los brazos, cierra los ojos un instante y exhala bajándolos despacio. Dice con voz serena y pausada, acento colombiano: "Inhala profundo… dos, tres… y exhala despacio. Suelta los hombros, suelta el cuerpo." Ritmo calmado, movimiento lento y fluido. Sin subtítulos ni textos en pantalla.` },
+  { id:3, nombre:'Cierre', archivo:'conexion-vital-clip3-cierre.mp4', prompt:
+`La misma mujer 3D de la imagen adjunta, mismo parque soleado, plano medio, cámara fija. Abre los brazos con energía amable, sonríe a cámara y termina con un gesto de ánimo levantando el pulgar. Dice con voz cálida y motivadora, acento colombiano: "Regálate esta pausa todos los días. Tu bienestar empieza con una buena respiración. ¡Sigue el circuito!" Sin subtítulos ni textos en pantalla.` }
+];
+
+let imagenB64 = null;
+async function cargarImagen(){
+  if(imagenB64) return imagenB64;
+  const r = await fetch('assets/mama.png');
+  const blob = await r.blob();
+  imagenB64 = await new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => res(fr.result.split(',')[1]);
+    fr.onerror = rej;
+    fr.readAsDataURL(blob);
+  });
+  return imagenB64;
+}
+
+function pintar(){
+  const cont = document.getElementById('clips');
+  CLIPS.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'panel';
+    d.innerHTML = '<img class="ref" src="assets/mama.png" alt="mamá Vital">' +
+      '<h2>' + (c.id + 1) + ' · Clip ' + c.id + ' — ' + c.nombre + '</h2>' +
+      '<p class="desc">Puedes ajustar el texto antes de generar. Lo que va entre comillas es lo que ella dice (máx. ~20 palabras por clip de 8 s).</p>' +
+      '<textarea id="p' + c.id + '"></textarea>' +
+      '<div style="margin-top:12px"><button id="b' + c.id + '">Generar clip ' + c.id + '</button></div>' +
+      '<div class="estado" id="e' + c.id + '"></div>' +
+      '<div id="v' + c.id + '"></div>';
+    cont.appendChild(d);
+    d.querySelector('#p' + c.id).value = c.prompt;
+    d.querySelector('#b' + c.id).onclick = () => generar(c);
+  });
+}
+
+function clave(){ return document.getElementById('clave').value.trim(); }
+const espera = ms => new Promise(r => setTimeout(r, ms));
+
+async function llamar(url, opciones){
+  const r = await fetch(url, opciones);
+  const texto = await r.text();
+  let json = null;
+  try{ json = JSON.parse(texto); }catch(e){}
+  if(!r.ok){
+    const msg = (json && json.error && json.error.message) ? json.error.message : texto.slice(0, 300);
+    const err = new Error('HTTP ' + r.status + ': ' + msg);
+    err.estado = r.status;
+    throw err;
+  }
+  return json;
+}
+
+async function generar(c){
+  const k = clave();
+  const est = document.getElementById('e' + c.id);
+  const btn = document.getElementById('b' + c.id);
+  const cont = document.getElementById('v' + c.id);
+  est.className = 'estado';
+  if(!k){ est.className = 'estado error'; est.textContent = 'Primero pega tu llave de API en el recuadro de arriba.'; return; }
+  btn.disabled = true;
+  cont.innerHTML = '';
+  try{
+    est.textContent = 'Preparando la imagen…';
+    const img = await cargarImagen();
+    const modelo = document.getElementById('modelo').value;
+    const params = { aspectRatio:'16:9', resolution: document.getElementById('resolucion').value,
+                     negativePrompt:'subtítulos, texto en pantalla, letras, marca de agua' };
+    const prompt = document.getElementById('p' + c.id).value.trim();
+    const cab = { 'x-goog-api-key': k, 'Content-Type': 'application/json' };
+
+    est.textContent = 'Enviando a Google… (calidad: ' + (modelo.includes('fast') ? 'rápida' : 'estándar') + ')';
+    let op;
+    try{
+      op = await llamar(BASE + '/models/' + modelo + ':predictLongRunning', { method:'POST', headers:cab,
+        body: JSON.stringify({ instances:[{ prompt, image:{ bytesBase64Encoded: img, mimeType:'image/png' } }], parameters: params }) });
+    }catch(e1){
+      if(e1.estado !== 400) throw e1;
+      /* algunos despliegues esperan la imagen en otro formato; se reintenta una vez */
+      op = await llamar(BASE + '/models/' + modelo + ':predictLongRunning', { method:'POST', headers:cab,
+        body: JSON.stringify({ instances:[{ prompt, image:{ inlineData:{ mimeType:'image/png', data: img } } }], parameters: params }) });
+    }
+    if(!op || !op.name) throw new Error('Google no devolvió una operación. Respuesta: ' + JSON.stringify(op).slice(0, 300));
+
+    const inicio = Date.now();
+    let fin = null;
+    while(!fin){
+      const seg = Math.round((Date.now() - inicio) / 1000);
+      est.textContent = 'Generando el video… ' + seg + ' s (suele tardar 1 a 3 minutos, no cierres la pestaña)';
+      if(seg > 480) throw new Error('Google tardó más de 8 minutos. Intenta de nuevo.');
+      await espera(10000);
+      const r = await llamar(BASE + '/' + op.name, { headers: { 'x-goog-api-key': k } });
+      if(r.done) fin = r;
+      if(r.error) throw new Error('La generación falló: ' + JSON.stringify(r.error).slice(0, 300));
+    }
+    if(fin.error) throw new Error('La generación falló: ' + JSON.stringify(fin.error).slice(0, 300));
+
+    const gen = fin.response && fin.response.generateVideoResponse;
+    const uri = gen && gen.generatedSamples && gen.generatedSamples[0] && gen.generatedSamples[0].video && gen.generatedSamples[0].video.uri;
+    if(!uri){
+      if(gen && gen.raiMediaFilteredCount) throw new Error('Google filtró el resultado por sus políticas de contenido. Ajusta el texto e intenta de nuevo.');
+      throw new Error('No llegó el enlace del video. Respuesta: ' + JSON.stringify(fin.response || fin).slice(0, 400));
+    }
+
+    est.textContent = 'Descargando el video…';
+    const rv = await fetch(uri, { headers: { 'x-goog-api-key': k } });
+    if(!rv.ok) throw new Error('No se pudo descargar el video (HTTP ' + rv.status + ').');
+    const blob = await rv.blob();
+    const url = URL.createObjectURL(blob);
+    cont.innerHTML = '<video controls src="' + url + '"></video>' +
+      '<a class="descarga" href="' + url + '" download="' + c.archivo + '">⬇ Descargar ' + c.archivo + '</a>';
+    est.className = 'estado ok';
+    est.textContent = '¡Listo! Míralo, y si te gusta descárgalo. Si no, ajusta el texto y genera de nuevo.';
+  }catch(e){
+    est.className = 'estado error';
+    est.textContent = 'Error: ' + e.message + ' — Si no sabes qué significa, cópialo y pégamelo en el chat.';
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+pintar();
+</script>
+</body>
+</html>
