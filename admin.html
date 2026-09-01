@@ -89,6 +89,15 @@ td.num,th.num{text-align:right}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
 @media(max-width:640px){.grid2{grid-template-columns:1fr}}
 .nota{font-size:12.5px;color:var(--texto2);margin-top:10px;line-height:1.5}
+tr.mes-fila{cursor:pointer}
+tr.mes-fila:hover td{background:var(--pista)}
+tr.mes-fila.sel td{background:#E3F2FC}
+.det-cab{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px 0 10px;padding-top:16px;border-top:1px solid var(--borde)}
+.det-cab b{font-size:13px;letter-spacing:.4px;text-transform:uppercase}
+.det-scroll{max-height:320px;overflow-y:auto;overflow-x:auto}
+.det-scroll th{position:sticky;top:0;background:#fff;z-index:1}
+code.cod{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;font-weight:700;letter-spacing:.5px}
+.vencido{opacity:.55}
 .desc-fila{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--borde);flex-wrap:wrap}
 .desc-fila b{font-size:14px}
 .desc-fila small{display:block;color:var(--texto2);font-weight:400;margin-top:2px;font-size:12px}
@@ -169,6 +178,17 @@ td.num,th.num{text-align:right}
           <table><thead><tr><th>Mes</th><th>Tipo</th><th class="num">Cargados</th><th class="num">Entregados</th><th class="num">Libres</th></tr></thead>
           <tbody id="cod-meses"></tbody></table>
           <p class="nota" id="cod-vacio" hidden>Aún no hay códigos cargados. Usa el formulario para cargar el lote del mes.</p>
+          <p class="nota" id="cod-ayuda">Haz clic en un mes para ver sus códigos uno por uno.</p>
+          <div id="cod-detalle" hidden>
+            <div class="det-cab">
+              <b id="det-tit"></b>
+              <button class="mini" onclick="cerrarDetalle()">cerrar</button>
+            </div>
+            <input id="det-buscar" placeholder="Buscar código o cédula…" oninput="pintarDetalle()" style="margin-bottom:10px">
+            <div class="det-scroll"><table><thead><tr><th>Código</th><th>Estado</th><th>Vence</th></tr></thead>
+            <tbody id="det-filas"></tbody></table></div>
+            <p class="nota" id="det-resumen"></p>
+          </div>
         </section>
         <section class="card">
           <h2>Cargar lote del mes</h2>
@@ -348,13 +368,65 @@ function pintarCifras(m){
 function pintarMeses(lista){
   $("cod-meses").innerHTML = lista.map(m => {
     const comp = m.tipo === 'compartido';
-    return '<tr><td><b>' + m.mes + '</b></td>' +
+    return '<tr class="mes-fila" data-mes="' + m.mes + '" onclick="verCodigos(\'' + m.mes + '\')"><td><b>' + m.mes + '</b></td>' +
       '<td>' + (comp ? '<span class="pill admin" title="' + m.codigo + '">compartido</span>' : '<span class="pill lector">únicos</span>') + '</td>' +
       '<td class="num">' + (comp ? '1' : m.total) + '</td>' +
       '<td class="num">' + m.usados + '</td>' +
       '<td class="num"><b>' + (comp ? '∞' : m.libres) + '</b></td></tr>';
   }).join('');
   $("cod-vacio").hidden = lista.length > 0;
+  $("cod-ayuda").hidden = lista.length === 0;
+}
+
+/* ---------- detalle de códigos de un mes ---------- */
+let detalle = null;
+
+async function verCodigos(mes){
+  document.querySelectorAll('tr.mes-fila').forEach(t => t.classList.toggle('sel', t.dataset.mes === mes));
+  $("cod-detalle").hidden = false;
+  $("det-tit").textContent = 'Códigos de ' + mes;
+  $("det-filas").innerHTML = '<tr><td colspan="3" style="color:var(--texto2)">Cargando…</td></tr>';
+  $("det-resumen").textContent = '';
+  const r = await api('codigos_detalle', { mes }).catch(() => ({ error: 'red' }));
+  if (r.error === 'sesion') { sesionVencida(); return; }
+  if (!r.codigos) { $("det-filas").innerHTML = '<tr><td colspan="3">No se pudo cargar la lista.</td></tr>'; return; }
+  detalle = r;
+  pintarDetalle();
+}
+function cerrarDetalle(){
+  $("cod-detalle").hidden = true;
+  detalle = null;
+  document.querySelectorAll('tr.mes-fila').forEach(t => t.classList.remove('sel'));
+}
+function pintarDetalle(){
+  if (!detalle) return;
+  const q = $("det-buscar").value.trim().toLowerCase();
+  const filtro = detalle.codigos.filter(c =>
+    !q || c.codigo.toLowerCase().includes(q) || (c.documento || '').includes(q));
+  $("det-filas").innerHTML = filtro.length ? filtro.map(c => {
+    let estado, clase = '';
+    if (c.tipo === 'compartido') {
+      estado = '<span class="pill admin">compartido</span> entregado ' + c.entregas + ' ' + (c.entregas === 1 ? 'vez' : 'veces');
+    } else if (c.documento) {
+      estado = '<span class="pill no">entregado</span> C.C. ' + c.documento + (c.parque ? ' · ' + c.parque : '');
+      if (!c.vigente) clase = 'vencido';
+    } else if (c.vigente) {
+      estado = '<span class="pill si">libre</span> listo para entregar';
+    } else {
+      estado = '<span class="pill lector">fuera de mes</span> ya no se entrega';
+      clase = 'vencido';
+    }
+    return '<tr class="' + clase + '"><td><code class="cod">' + c.codigo + '</code></td>' +
+           '<td>' + estado + '</td><td>' + (c.vence || '—') + '</td></tr>';
+  }).join('') : '<tr><td colspan="3" style="color:var(--texto2)">Sin resultados.</td></tr>';
+
+  const libres = detalle.codigos.filter(c => c.libre && c.vigente).length;
+  const entregados = detalle.codigos.filter(c => c.documento).length;
+  $("det-resumen").textContent = detalle.codigos.length + ' códigos en el mes · ' +
+    (detalle.codigos.some(c => c.tipo === 'compartido')
+      ? 'código compartido, entregas ilimitadas'
+      : libres + ' libres para entregar · ' + entregados + ' ya entregados') +
+    (q ? ' · mostrando ' + filtro.length + ' con el filtro' : '');
 }
 
 function cambioTipo(){
@@ -382,6 +454,7 @@ async function cargarLote(){
       : 'Listo: ' + r.agregados + ' códigos cargados' + (r.duplicados ? ' · ' + r.duplicados + ' repetidos ignorados' : '') + '.', true);
     $("cg-codigos").value = '';
     const d = await api('datos'); if (d.codigos_mes) pintarMeses(d.codigos_mes);
+    if (detalle && detalle.mes === mes) verCodigos(mes);
   } else if (r.error === 'mixto') {
     aviso('cg-msg', 'Ese mes ya tiene el otro tipo de lote. Un mes es de códigos únicos o de código compartido, no ambos.', false);
   } else {

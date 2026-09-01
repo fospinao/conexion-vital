@@ -547,6 +547,7 @@ function adminRouter(d) {
   if (accion === 'clave')   return cambiarClave(s, d);
   if (accion === 'descargar')          return esAdmin ? descargarTabla(d) : { error: 'permiso' };
   if (accion === 'cargar_codigos')     return esAdmin ? cargarCodigos(d) : { error: 'permiso' };
+  if (accion === 'codigos_detalle')    return esAdmin ? codigosDetalle(d) : { error: 'permiso' };
   if (accion === 'usuarios')           return esSuper ? usuariosLista() : { error: 'permiso' };
   if (accion === 'usuario_guardar')    return esSuper ? usuarioGuardar(s, d) : { error: 'permiso' };
   if (accion === 'borrar_participante')return esSuper ? borrarParticipante(d) : { error: 'permiso' };
@@ -619,6 +620,56 @@ function descargarTabla(d) {
     }).join(',');
   }).join('\r\n');
   return { nombre: tabla + '.csv', csv: csv };
+}
+
+/* lista los códigos de un mes con su estado (para verlos en el panel) */
+function codigosDetalle(d) {
+  var mes = String(d.mes || '').trim();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var h = ss.getSheetByName('codigos');
+  if (!h || h.getLastRow() < 2) return { mes: mes, codigos: [] };
+
+  /* entregas por código (sirve para el modo compartido) */
+  var hr = ss.getSheetByName('redenciones');
+  var entregas = {};
+  if (hr && hr.getLastRow() > 1) {
+    hr.getDataRange().getValues().slice(1).forEach(function(f) {
+      var c = String(f[2] || '');
+      if (c) entregas[c] = (entregas[c] || 0) + 1;
+    });
+  }
+
+  var hoy = Utilities.formatDate(new Date(), ZONA, 'yyyy-MM-dd');
+  var mesActual = Utilities.formatDate(new Date(), ZONA, 'yyyy-MM');
+  var lista = [];
+  h.getDataRange().getValues().slice(1).forEach(function(f) {
+    if (!f[0]) return;
+    var mesFila = normalizarMes(f[1]);
+    if (mes && mesFila !== mes) return;
+    var compartido = String(f[6] || '').toLowerCase().indexOf('comp') === 0;
+    var vence = fechaDe(f[5]);
+    var doc = String(f[2] || '').replace(/\D/g, '');
+    lista.push({
+      codigo: String(f[0]),
+      mes: mesFila,
+      tipo: compartido ? 'compartido' : 'unico',
+      documento: doc,
+      parque: String(f[3] || ''),
+      asignado: fechaDe(f[4]),
+      vence: vence,
+      entregas: entregas[String(f[0])] || 0,
+      /* libre: nadie lo tiene todavía (o es compartido, que nunca se agota) */
+      libre: compartido || !doc,
+      /* vigente: se puede entregar (mes en curso) o el entregado aún no vence */
+      vigente: doc ? (!vence || vence >= hoy) : (mesFila === mesActual)
+    });
+  });
+  return { mes: mes, hoy: hoy, mes_actual: mesActual, codigos: lista };
+}
+
+function fechaDe(v) {
+  if (v instanceof Date) return Utilities.formatDate(v, ZONA, 'yyyy-MM-dd');
+  return String(v || '').slice(0, 10);
 }
 
 function cargarCodigos(d) {
