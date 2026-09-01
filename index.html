@@ -538,8 +538,23 @@ const ESTACIONES = [
 /* =====================================================================
    ESTADO
    ===================================================================== */
-const KEY = 'cv_' + CONFIG.parque;
-let estado = JSON.parse(localStorage.getItem(KEY) || 'null') || {
+const KEY = 'cv_estado';   /* una sola sesión por celular, sin importar la sede */
+let estado = JSON.parse(localStorage.getItem(KEY) || 'null');
+if(!estado){
+  /* migración: versiones anteriores guardaban el avance por sede (cv_<sede>).
+     Se adopta la primera sesión encontrada y se limpian las llaves viejas. */
+  const viejas = [];
+  for(let i = 0; i < localStorage.length; i++){
+    const k = localStorage.key(i);
+    if(k && k.indexOf('cv_') === 0 && k !== KEY && k !== 'cv_codigos_usados') viejas.push(k);
+  }
+  viejas.forEach(k => {
+    try{ const v = JSON.parse(localStorage.getItem(k)); if(!estado && v && v.usuario) estado = v; }catch(e){}
+    localStorage.removeItem(k);
+  });
+  if(estado) localStorage.setItem(KEY, JSON.stringify(estado));
+}
+estado = estado || {
   usuario:null, progreso:{1:false,2:false,3:false,4:false},
   vuelta:1, codigo:null, codigos:[]
 };
