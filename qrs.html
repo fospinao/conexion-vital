@@ -8,55 +8,160 @@
 <style>
 body{font-family:system-ui,sans-serif;background:#EAF6FE;color:#123A5C;margin:0;padding:30px 20px;display:flex;flex-direction:column;align-items:center}
 h1{font-size:24px;margin-bottom:4px}
-p{color:#4A6B8A;margin:4px 0 20px;text-align:center;max-width:520px}
-.controles{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:26px}
-input,select{padding:11px 14px;border:2px solid #B9DCF5;border-radius:12px;font-size:15px;min-width:260px}
-select{min-width:160px}
+p{color:#4A6B8A;margin:4px 0 20px;text-align:center;max-width:600px;line-height:1.5}
+.controles{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;max-width:1000px}
+input,select{padding:11px 14px;border:2px solid #B9DCF5;border-radius:12px;font-size:15px;min-width:250px;background:#fff;color:#123A5C}
+select{min-width:170px}
 button{padding:11px 22px;border:none;border-radius:12px;background:#1B87D4;color:#fff;font-weight:700;font-size:15px;cursor:pointer}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px;width:100%;max-width:1000px}
-.qr-card{background:#fff;border-radius:18px;padding:20px;text-align:center;box-shadow:0 6px 18px rgba(14,95,168,.12)}
+button.claro{background:#fff;color:#1B87D4;border:2px solid #B9DCF5}
+button:hover{filter:brightness(1.06)}
+.acciones{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;width:100%;max-width:1000px}
+.qr-card{background:#fff;border-radius:18px;padding:20px;text-align:center;box-shadow:0 6px 18px rgba(14,95,168,.12);display:flex;flex-direction:column}
 .qr-card h3{margin:0 0 4px;font-size:16px}
-.qr-card small{color:#7C99B4;font-size:11.5px;word-break:break-all;display:block;margin-top:10px}
-.qr{display:flex;justify-content:center;margin-top:12px}
-@media print{.controles,button,p.nota{display:none}.grid{grid-template-columns:1fr 1fr}}
+.qr-card .desc{color:#4A6B8A;font-size:13px}
+.qr-card small{color:#7C99B4;font-size:11px;word-break:break-all;display:block;margin-top:10px}
+.qr{display:flex;justify-content:center;margin-top:14px}
+.qr svg{width:190px;height:190px;display:block}
+.qr-card button{margin-top:14px;font-size:13.5px;padding:9px 14px}
+.ficha{max-width:1000px;background:#fff;border-radius:18px;padding:20px 24px;margin-top:26px;
+  box-shadow:0 6px 18px rgba(14,95,168,.12);font-size:14px;line-height:1.6;color:#4A6B8A}
+.ficha b{color:#123A5C}
+.ficha ul{margin:8px 0 0;padding-left:20px}
+@media print{
+  .controles,.acciones,.ficha,button,p.nota{display:none}
+  body{background:#fff;padding:0}
+  .grid{grid-template-columns:1fr 1fr;gap:10px}
+  .qr-card{box-shadow:none;break-inside:avoid}
+}
 </style>
 </head>
 <body>
 <h1>Generador de QRs · Conexión Vital</h1>
-<p>Escribe la URL donde quedó publicada la app (GitHub Pages), elige el parque y genera los 5 QRs: el de bienvenida (arco) y los 4 de las estaciones. Usa Ctrl+P para imprimirlos o haz captura para pruebas.</p>
+<p class="nota">Genera los 5 códigos de una sede — el arco de bienvenida y los 4 tótems — en <b>SVG vectorial</b>,
+listo para Illustrator y para impresión en gran formato. Cada juego lleva la sede adentro, así que hay que
+generar uno por club.</p>
+
 <div class="controles">
   <input id="base" type="url" value="https://conexionvital.app/" placeholder="https://conexionvital.app/">
   <select id="parque">
     <option value="colsubsidio-lacolina">Club Colsubsidio La Colina</option>
     <option value="colsubsidio-bellavista">Club Colsubsidio Bellavista</option>
   </select>
-  <button onclick="generar()">Generar QRs</button>
+  <select id="nivel">
+    <option value="H">Corrección alta (permite logo encima)</option>
+    <option value="M">Corrección media (código más simple)</option>
+  </select>
+  <select id="color">
+    <option value="#000000">Módulos negros</option>
+    <option value="#123A5C">Módulos azul Postobón</option>
+  </select>
+  <select id="fondo">
+    <option value="#FFFFFF">Fondo blanco</option>
+    <option value="">Fondo transparente</option>
+  </select>
 </div>
+<div class="acciones">
+  <button onclick="generar()">Generar QRs</button>
+  <button class="claro" onclick="descargarTodos()">Descargar los 5 en SVG</button>
+  <button class="claro" onclick="window.print()">Imprimir</button>
+</div>
+
 <div class="grid" id="grid"></div>
+
+<div class="ficha" id="ficha">
+  <b>Para producción</b>
+  <ul>
+    <li><b>Formato:</b> SVG vectorial. Se abre en Illustrator sin perder calidad a ningún tamaño. Los módulos
+      salen como una sola forma compuesta, así que se recolorean de un clic.</li>
+    <li><b>Tamaño mínimo:</b> el ancho del código debe ser al menos la décima parte de la distancia de lectura.
+      Si la gente escanea a metro y medio, el QR no puede bajar de <b>15 cm</b> de lado. Para un tótem de pie,
+      20 cm o más va sobrado.</li>
+    <li><b>Zona de silencio:</b> ya viene incluida en el archivo — es el marco blanco alrededor. No la recorten
+      ni le monten gráfica encima; sin ella muchos lectores fallan.</li>
+    <li><b>Logo al centro:</b> solo con corrección alta, y sin tapar más del 25 % del área.</li>
+    <li><b>Contraste:</b> módulos oscuros sobre fondo claro, nunca al revés. Si el tótem es de color, dejen el
+      QR sobre un recuadro blanco.</li>
+    <li><b>Antes de imprimir:</b> escaneen la prueba impresa con dos celulares distintos.</li>
+  </ul>
+</div>
+
 <script>
 const PUNTOS = [
-  { titulo:'Arco de bienvenida', desc:'Registro e inicio', extra:'' },
-  { titulo:'Tótem 1 · Movimiento', desc:'¡Mueve el cuerpo!', extra:'&estacion=1' },
-  { titulo:'Tótem 2 · Conexión', desc:'Respira y conéctate', extra:'&estacion=2' },
-  { titulo:'Tótem 3 · Bienestar', desc:'Recicla bien, vive mejor', extra:'&estacion=3' },
-  { titulo:'Tótem 4 · Interacción', desc:'Pon a prueba tu mente', extra:'&estacion=4' }
+  { titulo:'Arco de bienvenida',   desc:'Registro e inicio',        extra:'',           slug:'arco' },
+  { titulo:'Tótem 1 · Movimiento', desc:'¡Mueve el cuerpo!',        extra:'&estacion=1', slug:'totem1-movimiento' },
+  { titulo:'Tótem 2 · Conexión',   desc:'Respira y conéctate',      extra:'&estacion=2', slug:'totem2-conexion' },
+  { titulo:'Tótem 3 · Bienestar',  desc:'Recicla bien, vive mejor', extra:'&estacion=3', slug:'totem3-bienestar' },
+  { titulo:'Tótem 4 · Interacción',desc:'Pon a prueba tu mente',    extra:'&estacion=4', slug:'totem4-interaccion' }
 ];
+const MARGEN = 4;   /* zona de silencio, en módulos (mínimo recomendado por el estándar) */
+let generados = [];
+
+/* Calcula la matriz del QR y la convierte en SVG vectorial. */
+function svgDelQR(texto, nivel, colorModulos, colorFondo){
+  const caja = document.createElement('div');
+  const qr = new QRCode(caja, { text: texto, width: 256, height: 256,
+    correctLevel: QRCode.CorrectLevel[nivel] });
+  const modelo = qr._oQRCode;
+  const n = modelo.getModuleCount();
+  const lado = n + MARGEN * 2;
+  let d = '';
+  for (let f = 0; f < n; f++){
+    for (let c = 0; c < n; c++){
+      if (modelo.isDark(f, c)) d += 'M' + (c + MARGEN) + ' ' + (f + MARGEN) + 'h1v1h-1z';
+    }
+  }
+  caja.remove();
+  const fondo = colorFondo ? '<rect width="' + lado + '" height="' + lado + '" fill="' + colorFondo + '"/>' : '';
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + lado + ' ' + lado + '" ' +
+         'width="1000" height="1000" shape-rendering="crispEdges">' + fondo +
+         '<path fill="' + colorModulos + '" d="' + d + '"/></svg>';
+}
+
 function generar(){
   let base = document.getElementById('base').value.trim();
-  if(!base){ alert('Escribe la URL de la app publicada.'); return; }
+  if(!base){ alert('Escribe la URL donde quedó publicada la app.'); return; }
   if(!base.endsWith('/')) base += '/';
   const parque = document.getElementById('parque').value;
+  const nivel  = document.getElementById('nivel').value;
+  const color  = document.getElementById('color').value;
+  const fondo  = document.getElementById('fondo').value;
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
-  PUNTOS.forEach(p=>{
+  generados = [];
+
+  PUNTOS.forEach((p, i) => {
     const url = base + '?parque=' + parque + p.extra;
+    const svg = svgDelQR(url, nivel, color, fondo);
+    const archivo = 'QR-conexion-vital-' + parque + '-' + p.slug + '.svg';
+    generados.push({ archivo: archivo, svg: svg });
+
     const card = document.createElement('div');
     card.className = 'qr-card';
-    card.innerHTML = `<h3>${p.titulo}</h3><span style="color:#4A6B8A;font-size:13px">${p.desc}</span><div class="qr"></div><small>${url}</small>`;
+    card.innerHTML = '<h3>' + p.titulo + '</h3><span class="desc">' + p.desc + '</span>' +
+      '<div class="qr">' + svg + '</div><small>' + url + '</small>' +
+      '<button class="claro" data-i="' + i + '">Descargar SVG</button>';
+    card.querySelector('button').onclick = function(){ descargar(generados[this.dataset.i]); };
     grid.appendChild(card);
-    new QRCode(card.querySelector('.qr'), { text:url, width:180, height:180, correctLevel:QRCode.CorrectLevel.M });
   });
 }
+
+function descargar(item){
+  const blob = new Blob([item.svg], { type: 'image/svg+xml;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = item.archivo;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+function descargarTodos(){
+  if(!generados.length){ alert('Primero genera los QRs.'); return; }
+  generados.forEach((item, i) => setTimeout(() => descargar(item), i * 400));
+}
+
+generar();
 </script>
 </body>
 </html>
