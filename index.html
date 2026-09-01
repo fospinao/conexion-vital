@@ -503,11 +503,11 @@ const CONFIG = {
      solo entonces el campo del registro queda bloqueado. */
   parqueQR: (new URLSearchParams(location.search).get('parque') || ''),
   parque: (new URLSearchParams(location.search).get('parque') || 'comfama'),
+  /* Lista de respaldo: solo se usa si el Sheet no responde. La lista real
+     vive en la pestaña "parques" del Google Sheet. */
   parques: {
-    comfama:     { nombre:'COMFAMA' },
-    epm:         { nombre:'EPM' },
-    colsubsidio: { nombre:'COLSUBSIDIO' },
-    arvi:        { nombre:'PARQUE ARVÍ' }
+    lacolina:   { nombre:'CLUB LA COLINA' },
+    bellavista: { nombre:'CLUB BELLAVISTA' }
   },
   /* >>> BACKEND: URL del Web App de Google Apps Script (backend/apps-script-backend.gs).
      Vacío = modo local (localStorage, ideal para demo). <<< */
@@ -730,6 +730,7 @@ function pintarParques(lista){
   } else if(CONFIG.parqueQR){
     /* el QR trae una sede que no está activa en la base: se avisa en vez de fallar callado */
     crear().className = 'pista-qr alerta';
+    document.getElementById('chip-parque').textContent = '';
     pista.textContent = 'El QR trae una sede que no está activa ("' + CONFIG.parqueQR +
       '"). Escoge la tuya en la lista y avísale al equipo del parque.';
   } else if(pista){ pista.remove(); }
