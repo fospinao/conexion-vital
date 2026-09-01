@@ -60,6 +60,10 @@ h2{font-family:'Baloo 2';font-size:21px;color:var(--tinta)}
 }
 .campo input:focus,.campo select:focus{border-color:var(--azul-1)}
 .campo.error input,.campo.error select{border-color:var(--rojo)}
+/* sede detectada por el QR: se muestra, no se edita */
+.campo.fijo select{background:#EEF6FC;border-color:#CFE4F4;color:#3A5C7A;-webkit-appearance:none;appearance:none}
+.campo .pista-qr{display:block;margin-top:5px;font-size:12px;font-weight:700;color:#7C99B4}
+.campo .pista-qr::before{content:"\1F4CD";margin-right:5px}
 .checks{margin-top:16px;display:flex;flex-direction:column;gap:10px}
 .check{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.4;color:#3D5F80}
 .check input{width:20px;height:20px;margin-top:1px;accent-color:var(--azul-1);flex-shrink:0}
@@ -188,10 +192,14 @@ h2{font-family:'Baloo 2';font-size:21px;color:var(--tinta)}
 .mini-eti{font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#7C99B4}
 
 /* concentración */
-.grid-conc{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
+.conc-cab{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:10px}
+.conc-seg{font-family:'Baloo 2';font-size:30px;font-weight:800;color:var(--lila);
+  font-variant-numeric:tabular-nums;min-width:40px;text-align:left}
+.conc-seg.alerta{color:var(--rojo)}
+.grid-conc{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:14px 0}
 .grid-conc button{
-  border:none;background:var(--lila-suave);border-radius:16px;aspect-ratio:1;font-size:34px;cursor:pointer;
-  transition:transform .1s ease;
+  border:none;background:var(--lila-suave);border-radius:11px;aspect-ratio:1;font-size:23px;cursor:pointer;
+  transition:transform .1s ease;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;
 }
 .grid-conc button:active{transform:scale(.92)}
 .grid-conc button.mal{animation:tiembla .3s ease}
@@ -489,6 +497,9 @@ h2{font-family:'Baloo 2';font-size:21px;color:var(--tinta)}
      Google Sheets). Si está vacío, la app funciona en modo local.
    ===================================================================== */
 const CONFIG = {
+  /* La sede viene en el QR (?parque=). parqueQR guarda si vino de verdad:
+     solo entonces el campo del registro queda bloqueado. */
+  parqueQR: (new URLSearchParams(location.search).get('parque') || ''),
   parque: (new URLSearchParams(location.search).get('parque') || 'comfama'),
   parques: {
     comfama:     { nombre:'COMFAMA' },
@@ -572,7 +583,8 @@ function rng(seed){
     return ((t ^ t >>> 14) >>> 0) / 4294967296;
   };
 }
-function claveUsuario(){ return (estado.usuario?.doc || 'anon') + '|' + CONFIG.parque + '|v' + (estado.vuelta || 1); }
+function parqueActual(){ return (estado.usuario && estado.usuario.parqueJuego) || CONFIG.parque || 'general'; }
+function claveUsuario(){ return (estado.usuario?.doc || 'anon') + '|' + parqueActual() + '|v' + (estado.vuelta || 1); }
 /* elige 1 elemento del banco, estable por participante */
 function variante(banco, salt){
   const r = rng(semilla(claveUsuario() + '|' + salt));
@@ -606,7 +618,7 @@ const Backend = {
 
   post(tipo, datos, esperarRespuesta){
     if(!this.activo) return Promise.resolve(undefined);
-    const cuerpo = JSON.stringify({ tipo, parque:CONFIG.parque, fecha:new Date().toISOString(), ...datos });
+    const cuerpo = JSON.stringify({ tipo, parque:parqueActual(), fecha:new Date().toISOString(), ...datos });
     const p = fetch(CONFIG.SHEET_API, {
       method:'POST',
       headers:{ 'Content-Type':'text/plain;charset=utf-8' },
@@ -636,13 +648,13 @@ const Backend = {
   /* busca el registro por documento; devuelve estado remoto, null o undefined */
   buscarUsuario(doc){
     if(!this.activo) return Promise.resolve(undefined);
-    return this.get({ accion:'progreso', doc:doc, parque:CONFIG.parque })
+    return this.get({ accion:'progreso', doc:doc, parque:parqueActual() })
       .then(r => (r && r.existe) ? r : null);
   },
 
   reportarEstacion(n){
     this.post('estacion', { doc:estado.usuario.doc, estacion:n, vuelta:estado.vuelta,
-                            parque_juego: estado.usuario.parqueJuego || CONFIG.parque });
+                            parque_juego: parqueActual() });
   },
 
   reportarIntencion(txt){
@@ -660,7 +672,7 @@ const Backend = {
     return this.post('codigo', {
       doc: estado.usuario.doc,
       vuelta: estado.vuelta,
-      parque_juego: estado.usuario.parqueJuego || CONFIG.parque
+      parque_juego: parqueActual()
     }, true);
   }
 };
@@ -701,32 +713,43 @@ function pintarParques(lista){
     o.value = p.id; o.textContent = p.nombre;
     sel.appendChild(o);
   });
-  /* preselecciona el parque del QR si está en la lista */
-  if(lista.some(p=>p.id===CONFIG.parque)) sel.value = CONFIG.parque;
-  const enLista = lista.find(p=>p.id===CONFIG.parque);
-  if(enLista) document.getElementById('chip-parque').textContent = enLista.nombre;
+  /* El QR del parque ya dice en qué sede estamos: se deja puesto y bloqueado
+     para que nadie lo cambie por error. Si no viniera en el QR, queda editable. */
+  const fijo = !!(CONFIG.parqueQR && lista.some(p=>p.id===CONFIG.parqueQR));
+  sel.value = fijo ? CONFIG.parqueQR : ((estado.usuario && estado.usuario.parqueJuego) || '');
+  sel.disabled = fijo;
+  const campo = document.getElementById('c-parque');
+  campo.classList.toggle('fijo', fijo);
+  let pista = campo.querySelector('.pista-qr');
+  if(fijo){
+    if(!pista){ pista = document.createElement('small'); pista.className = 'pista-qr'; campo.appendChild(pista); }
+    pista.textContent = 'Detectado por el QR de la sede';
+  } else if(pista){ pista.remove(); }
+}
+
+/* Pone el nombre del parque en el encabezado y aplica su configuración externa
+   (config/{parque}.json puede sobreescribir nombre, colores y logo). */
+function marcaParque(id){
+  const chip = document.getElementById('chip-parque');
+  if(!id){ chip.textContent = ''; return; }
+  const p = CONFIG.parques[id];
+  chip.textContent = p ? p.nombre : id.toUpperCase();
+  fetch('config/' + id + '.json')
+    .then(r=>r.ok ? r.json() : null)
+    .then(cfg=>{
+      if(!cfg) return;
+      if(cfg.nombre) chip.textContent = cfg.nombre;
+      if(cfg.colores) Object.entries(cfg.colores).forEach(([k,v])=>
+        document.documentElement.style.setProperty('--'+k, v));
+      if(cfg.logo) chip.innerHTML = '<img src="'+cfg.logo+'" alt="'+(cfg.nombre||'')+'" style="height:26px;display:block">';
+    }).catch(()=>{});
 }
 (function init(){
-  const p = CONFIG.parques[CONFIG.parque];
-  document.getElementById('chip-parque').textContent = p ? p.nombre : CONFIG.parque.toUpperCase();
+  marcaParque(CONFIG.parque);
   /* desplegable de parques: arranca con los embebidos y se actualiza
      desde la pestaña "parques" del Google Sheet (parques nuevos aparecen solos) */
   pintarParques(Object.entries(CONFIG.parques).map(([id,v])=>({id, nombre:v.nombre})));
   Backend.parques().then(lista=>{ if(lista && lista.length) pintarParques(lista); });
-  /* Config externa por parque: config/{parque}.json puede sobreescribir
-     nombre, colores y logo del parque sin tocar el código. */
-  fetch('config/'+CONFIG.parque+'.json')
-    .then(r=>r.ok ? r.json() : null)
-    .then(cfg=>{
-      if(!cfg) return;
-      if(cfg.nombre) document.getElementById('chip-parque').textContent = cfg.nombre;
-      if(cfg.colores) Object.entries(cfg.colores).forEach(([k,v])=>
-        document.documentElement.style.setProperty('--'+k, v));
-      if(cfg.logo){
-        const chip = document.getElementById('chip-parque');
-        chip.innerHTML = '<img src="'+cfg.logo+'" alt="'+(cfg.nombre||'')+'" style="height:26px;display:block">';
-      }
-    }).catch(()=>{});
   if(!CONFIG.DEMO_MODE) document.getElementById('demo-banda').classList.add('oculto');
 
   const qEst = parseInt(new URLSearchParams(location.search).get('estacion'));
@@ -770,6 +793,7 @@ function registrar(){
 
   const btn = document.getElementById('btn-registrar');
   const continuar = ()=>{
+    marcaParque(f.parqueJuego);
     guardar();
     Backend.guardarUsuario();
     btn.classList.remove('cargando');
@@ -784,12 +808,12 @@ function registrar(){
       aplicarRemoto(remoto);
       estado.usuario.parqueJuego = f.parqueJuego; /* hoy juega aquí */
     } else {
-      estado.usuario = { ...f, parque:CONFIG.parque, registro:new Date().toISOString() };
+      estado.usuario = { ...f, parque:f.parqueJuego, registro:new Date().toISOString() };
       estado.vuelta = 1;
     }
     continuar();
   }).catch(()=>{
-    estado.usuario = { ...f, parque:CONFIG.parque, registro:new Date().toISOString() };
+    estado.usuario = { ...f, parque:f.parqueJuego, registro:new Date().toISOString() };
     estado.vuelta = 1;
     continuar();
   });
@@ -800,7 +824,7 @@ function aplicarRemoto(r){
   const u = r.usuario || r;
   estado.usuario  = { nombre:u.nombre, correo:u.correo, genero:u.genero,
                       nac:u.nac, tipodoc:u.tipodoc, doc:u.doc,
-                      parque:u.parque || CONFIG.parque,
+                      parque:u.parque || CONFIG.parque || '',
                       parqueJuego:u.parqueJuego || '',
                       registro:u.registro };
   estado.vuelta   = r.vuelta || 1;
@@ -1177,10 +1201,13 @@ const RESPIRACIONES = [
   { nombre:'Respiración serena', inhala:5, sosten:2, exhala:5, ciclos:3,
     desc:'Lenta y amplia, como las olas. <b>3 respiraciones bien profundas</b>.' }
 ];
+/* pares casi idénticos: la dificultad está en mirar con calma */
 const PARES_CONC = [
-  ['🌿','🍀'], ['💧','💦'], ['🌙','⭐'], ['🍎','🍅'],
-  ['🌻','🌼'], ['🍊','🍋'], ['🌲','🌴'], ['⚽','🏀']
+  ['🌿','🍃'], ['💧','💦'], ['⭐','🌟'], ['🌼','🌻'],
+  ['🍏','🍐'], ['🔵','🔷'], ['🔺','🔻'], ['😀','😃']
 ];
+const CONC_CASILLAS = 25;   /* cuadrícula de 5 x 5 */
+const CONC_SEGUNDOS = 12;   /* tiempo por ronda */
 const INTENCIONES = [
   'Moverme más 🏃','Respirar con calma 🌬️','Compartir en familia 💙','Tomar más agua 💧',
   'Dormir mejor 😴','Comer más frutas 🍎','Caminar al aire libre 🌳','Agradecer algo hoy ✨',
@@ -1227,40 +1254,57 @@ function pasoRespiracion(panel){
 }
 function pasoConcentracion(panel){
   const RONDAS = elegir(PARES_CONC, 3, 'e2-concentracion').map(par=>({ base:par[0], dif:par[1] }));
-  let ronda = 0;
+  let ronda = 0, reloj = null, bloqueo = false;
   panel.innerHTML = `
     <div class="centro">
-      <p class="sub" style="margin:0"><b>Ojo de águila:</b> toca el símbolo diferente.<br>3 rondas para demostrar tu concentración.</p>
-      <div class="mini-eti" style="margin-top:10px" id="conc-ronda"></div>
+      <p class="sub" style="margin:0"><b>Ojo de águila:</b> encuentra el símbolo diferente<br>entre los ${CONC_CASILLAS}. 3 rondas de ${CONC_SEGUNDOS} segundos.</p>
+      <div class="conc-cab"><span class="mini-eti" id="conc-ronda"></span><span class="conc-seg" id="conc-seg"></span></div>
       <div class="grid-conc" id="grid"></div>
       <div class="feedback" id="fb"></div>
     </div>`;
+  const fb  = panel.querySelector('#fb');
+  const seg = panel.querySelector('#conc-seg');
+  function detener(){ if(reloj){ clearInterval(reloj); reloj = null; } }
   function pintar(){
+    detener();
+    bloqueo = false;
     panel.querySelector('#conc-ronda').textContent = 'Ronda '+(ronda+1)+' de 3';
+    fb.textContent = ''; fb.className = 'feedback';
     const grid = panel.querySelector('#grid');
     grid.innerHTML = '';
     const r = RONDAS[ronda];
-    const difIdx = Math.floor(Math.random()*9);
-    for(let i=0;i<9;i++){
+    const difIdx = Math.floor(Math.random()*CONC_CASILLAS);
+    for(let i=0;i<CONC_CASILLAS;i++){
       const b = document.createElement('button');
       b.textContent = i===difIdx ? r.dif : r.base;
       b.onclick = ()=>{
-        const fb = panel.querySelector('#fb');
+        if(bloqueo) return;
         if(i===difIdx){
+          bloqueo = true; detener();
           fb.textContent='¡Bien visto! ✅'; fb.className='feedback ok';
-          T(()=>{
-            fb.textContent='';
-            ronda++;
-            if(ronda<3) pintar(); else pasoSuperado();
-          }, 700);
+          T(()=>{ ronda++; if(ronda<3) pintar(); else pasoSuperado(); }, 700);
         } else {
           b.classList.add('mal');
-          fb.textContent='Mira con calma 👀'; fb.className='feedback mal';
-          T(()=>{ b.classList.remove('mal'); fb.textContent=''; }, 600);
+          fb.textContent='Ese no es 👀'; fb.className='feedback mal';
+          T(()=>{ b.classList.remove('mal'); if(!bloqueo){ fb.textContent=''; fb.className='feedback'; } }, 600);
         }
       };
       grid.appendChild(b);
     }
+    let t = CONC_SEGUNDOS;
+    seg.textContent = t; seg.classList.remove('alerta');
+    reloj = I(()=>{
+      t--;
+      seg.textContent = Math.max(0, t);
+      if(t<=4) seg.classList.add('alerta');
+      if(t<=0){
+        detener();
+        if(bloqueo) return;
+        bloqueo = true;
+        fb.textContent='¡Se acabó el tiempo! Vamos otra vez ⏱️'; fb.className='feedback mal';
+        T(pintar, 1200);
+      }
+    }, 1000);
   }
   pintar();
 }
