@@ -192,5 +192,43 @@ async function generar(c){
 
 pintar();
 </script>
+
+<!-- Portón del equipo: mismas credenciales del panel de administración -->
+<div id="cv-porton" style="position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#123A5C,#0B2A44);display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;padding:20px">
+  <form id="cv-porton-f" style="background:#fff;border-radius:20px;padding:32px 28px;width:100%;max-width:360px;box-shadow:0 24px 60px rgba(0,0,0,.3)">
+    <h2 style="margin:0 0 4px;font-size:18px;color:#123A5C">Acceso del equipo</h2>
+    <p style="margin:0 0 16px;font-size:13px;color:#4A6B8A;line-height:1.5">Esta página es interna. Entra con tu usuario y contraseña del panel de administración.</p>
+    <label style="display:block;font-size:13px;font-weight:700;color:#4A6B8A;margin-bottom:4px">Usuario</label>
+    <input id="cv-g-u" autocomplete="username" required style="width:100%;box-sizing:border-box;padding:11px 14px;border:2px solid #B9DCF5;border-radius:12px;font-size:14px;margin-bottom:12px">
+    <label style="display:block;font-size:13px;font-weight:700;color:#4A6B8A;margin-bottom:4px">Contraseña</label>
+    <input id="cv-g-c" type="password" autocomplete="current-password" required style="width:100%;box-sizing:border-box;padding:11px 14px;border:2px solid #B9DCF5;border-radius:12px;font-size:14px">
+    <button id="cv-g-b" style="width:100%;margin-top:18px;padding:12px;border:none;border-radius:12px;background:#1B87D4;color:#fff;font-weight:700;font-size:15px;cursor:pointer">Entrar</button>
+    <div id="cv-g-m" style="color:#C0392B;font-size:13px;font-weight:700;margin-top:10px;min-height:18px"></div>
+  </form>
+</div>
+<script>
+(function(){
+  var APIG = 'https://script.google.com/a/brutalagencia.com/macros/s/AKfycbwywsj6Y-4LdX3vkzVuY1gNgGM-hXWj0NsDXME3L_P4ZFj93G4JbnddMSkh8gn51tgtXg/exec';
+  function quitar(){ var p = document.getElementById('cv-porton'); if(p) p.remove(); }
+  try{
+    var s = JSON.parse(localStorage.getItem('cv_admin') || 'null');
+    if(s && s.token){ quitar(); return; }
+  }catch(e){}
+  document.getElementById('cv-porton-f').addEventListener('submit', function(ev){
+    ev.preventDefault();
+    var b = document.getElementById('cv-g-b'), m = document.getElementById('cv-g-m');
+    b.disabled = true; m.textContent = '';
+    fetch(APIG, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+      body: JSON.stringify({ tipo:'login', usuario: document.getElementById('cv-g-u').value.trim(), clave: document.getElementById('cv-g-c').value }) })
+      .then(function(r){ return r.json(); })
+      .then(function(r){
+        if(r && r.token){ localStorage.setItem('cv_admin', JSON.stringify(r)); quitar(); }
+        else { m.textContent = 'Usuario o contraseña incorrectos.'; }
+        b.disabled = false;
+      })
+      .catch(function(){ m.textContent = 'No pudimos conectar. Revisa tu internet e intenta de nuevo.'; b.disabled = false; });
+  });
+})();
+</script>
 </body>
 </html>
