@@ -197,7 +197,7 @@ pintar();
 <div id="cv-porton" style="position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#123A5C,#0B2A44);display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;padding:20px">
   <form id="cv-porton-f" style="background:#fff;border-radius:20px;padding:32px 28px;width:100%;max-width:360px;box-shadow:0 24px 60px rgba(0,0,0,.3)">
     <h2 style="margin:0 0 4px;font-size:18px;color:#123A5C">Acceso del equipo</h2>
-    <p style="margin:0 0 16px;font-size:13px;color:#4A6B8A;line-height:1.5">Esta página es interna. Entra con tu usuario y contraseña del panel de administración.</p>
+    <p style="margin:0 0 16px;font-size:13px;color:#4A6B8A;line-height:1.5">Esta página es solo del superadministrador. Entra con tu usuario y contraseña.</p>
     <label style="display:block;font-size:13px;font-weight:700;color:#4A6B8A;margin-bottom:4px">Usuario</label>
     <input id="cv-g-u" autocomplete="username" required style="width:100%;box-sizing:border-box;padding:11px 14px;border:2px solid #B9DCF5;border-radius:12px;font-size:14px;margin-bottom:12px">
     <label style="display:block;font-size:13px;font-weight:700;color:#4A6B8A;margin-bottom:4px">Contraseña</label>
@@ -212,7 +212,7 @@ pintar();
   function quitar(){ var p = document.getElementById('cv-porton'); if(p) p.remove(); }
   try{
     var s = JSON.parse(localStorage.getItem('cv_admin') || 'null');
-    if(s && s.token){ quitar(); return; }
+    if(s && s.token && s.rol === 'superadmin'){ quitar(); return; }
   }catch(e){}
   document.getElementById('cv-porton-f').addEventListener('submit', function(ev){
     ev.preventDefault();
@@ -222,7 +222,8 @@ pintar();
       body: JSON.stringify({ tipo:'login', usuario: document.getElementById('cv-g-u').value.trim(), clave: document.getElementById('cv-g-c').value }) })
       .then(function(r){ return r.json(); })
       .then(function(r){
-        if(r && r.token){ localStorage.setItem('cv_admin', JSON.stringify(r)); quitar(); }
+        if(r && r.token && r.rol === 'superadmin'){ localStorage.setItem('cv_admin', JSON.stringify(r)); quitar(); }
+        else if(r && r.token){ m.textContent = 'Esta zona es solo para el superadministrador.'; }
         else { m.textContent = 'Usuario o contraseña incorrectos.'; }
         b.disabled = false;
       })
